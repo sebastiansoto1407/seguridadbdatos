@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Capacitación en Alturas</title>
+  <meta name="description" content="Plataforma interactiva de capacitación en seguridad para trabajos en altura. Módulos específicos para empleadores y empleados." />
+  <meta name="theme-color" content="#0c111b" />
+  <style>
+    :root {
+      --color-white: rgba(255, 255, 255, 1);
+      --color-black: rgba(0, 0, 0, 1);
+      --color-cream-50: rgba(252, 252, 249, 1);
+      --color-cream-100: rgba(255, 255, 253, 1);
+      --color-gray-200: rgba(245, 245, 245, 1);
+      --color-gray-300: rgba(167, 169, 169, 1);
+      --color-gray-400: rgba(119, 124, 124, 1);
+      --color-slate-500: rgba(98, 108, 113, 1);
+      --color-brown-600: rgba(94, 82, 64, 1);
+      --color-charcoal-700: rgba(31, 33, 33, 1);
+      --color-charcoal-800: rgba(38, 40, 40, 1);
+      --color-slate-900: rgba(19, 52, 59, 1);
+      --color-teal-300: rgba(50, 184, 198, 1);
+      --color-teal-400: rgba(45, 166, 178, 1);
+      --color-teal-500: rgba(33, 128, 141, 1);
+      --color-teal-600: rgba(29, 116, 128, 1);
+      --color-teal-700: rgba(26, 104, 115, 1);
+      --color-orange-400: rgba(230, 129, 97, 1);
+      --color-orange-500: rgba(168, 75, 47, 1);
+      --color-brown-600-rgb: 94, 82, 64;
+      --color-teal-500-rgb: 33, 128, 141;
+      --color-slate-900-rgb: 19, 52, 59;
+      --color-slate-500-rgb: 98, 108, 113;
+      --color-orange-500-rgb: 168, 75, 47;
+      --color-background: var(--color-cream-50);
+      --color-surface: var(--color-cream-100);
+      --color-text: var(--color-slate-900);
+      --color-text-secondary: var(--color-slate-500);
+      --color-primary: var(--color-teal-500);
+      --color-primary-hover: var(--color-teal-600);
+      --color-primary-active: var(--color-teal-700);
+      --color-secondary: rgba(var(--color-brown-600-rgb), 0.12);
+      --color-secondary-hover: rgba(var(--color-brown-600-rgb), 0.2);
+      --color-border: rgba(var(--color-brown-600-rgb), 0.2);
+      --color-btn-primary-text: var(--color-cream-50);
+      --color-card-border: rgba(var(--color-brown-600-rgb), 0.12);
+      --color-warning: var(--color-orange-500);
+      --color-focus-ring: rgba(var(--color-teal-500-rgb), 0.4);
+      --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-size-sm: 12px;
+      --font-size-base: 14px;
+      --font-size-lg: 16px;
+      --font-size-xl: 18px;
+      --font-size-2xl: 20px;
+      --font-size-3xl: 24px;
+      --font-size-4xl: 30px;
+      --font-weight-normal: 400;
+      --font-weight-medium: 500;
+      --font-weight-semibold: 550;
+      --font-weight-bold: 600;
+      --line-height-tight: 1.2;
+      --line-height-normal: 1.5;
+      --space-4: 4px;
+      --space-8: 8px;
+      --space-12: 12px;
+      --space-16: 16px;
+      --space-20: 20px;
+      --space-24: 24px;
+      --space-32: 32px;
+      --radius-sm: 6px;
+      --radius-base: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+      --duration-normal: 250ms;
+      --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-gray-400-rgb: 119, 124, 124;
+        --color-teal-300-rgb: 50, 184, 198;
+        --color-gray-300-rgb: 167, 169, 169;
+        --color-gray-200-rgb: 245, 245, 245;
+        --color-background: var(--color-charcoal-700);
+        --color-surface: var(--color-charcoal-800);
+        --color-text: var(--color-gray-200);
+        --color-text-secondary: rgba(var(--color-gray-300-rgb), 0.7);
+        --color-primary: var(--color-teal-300);
+        --color-primary-hover: var(--color-teal-400);
+        --color-secondary: rgba(var(--color-gray-400-rgb), 0.15);
+        --color-secondary-hover: rgba(var(--color-gray-400-rgb), 0.25);
+        --color-border: rgba(var(--color-gray-400-rgb), 0.3);
+        --color-warning: var(--color-orange-400);
+        --color-focus-ring: rgba(var(--color-teal-300-rgb), 0.4);
+        --color-btn-primary-text: var(--color-slate-900);
+        --color-card-border: rgba(var(--color-gray-400-rgb), 0.2);
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: var(--font-size-base);
+      font-family: var(--font-family-base);
+      line-height: var(--line-height-normal);
+      color: var(--color-text);
+      background-color: var(--color-background);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    h1, h2 {
+      font-weight: var(--font-weight-semibold);
+      line-height: var(--line-height-tight);
+      color: var(--color-text);
+    }
+
+    h1 {
+      font-size: var(--font-size-4xl);
+      margin-bottom: var(--space-16);
+    }
+
+    h2 {
+      font-size: var(--font-size-2xl);
+      margin-bottom: var(--space-12);
+    }
+
+    p {
+      margin-bottom: var(--space-16);
+    }
+
+    a {
+      color: var(--color-primary);
+      text-decoration: none;
+      transition: color var(--duration-normal) var(--ease-standard);
+    }
+
+    a:hover {
+      color: var(--color-primary-hover);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-12) var(--space-24);
+      border-radius: var(--radius-base);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-medium);
+      cursor: pointer;
+      transition: all var(--duration-normal) var(--ease-standard);
+      border: none;
+      text-decoration: none;
+      background: var(--color-secondary);
+      color: var(--color-text);
+      width: 100%;
+      margin-top: var(--space-16);
+    }
+
+    .btn:hover {
+      background: var(--color-secondary-hover);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-focus-ring);
+    }
+
+    .btn-primary {
+      background: var(--color-primary);
+      color: var(--color-btn-primary-text);
+    }
+
+    .btn-primary:hover {
+      background: var(--color-primary-hover);
+      color: var(--color-btn-primary-text);
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--space-16);
+    }
+
+    /* Header */
+    .topbar {
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-card-border);
+      padding: var(--space-16) 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar .wrap {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text);
+    }
+
+    .logo {
+      font-size: var(--font-size-2xl);
+    }
+
+    .nav {
+      display: flex;
+      gap: var(--space-24);
+    }
+
+    .nav a {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .nav-mobile {
+      display: none;
+    }
+
+    /* Hero */
+    .hero {
+      padding: 80px 0;
+      background: var(--color-surface);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-32);
+      align-items: center;
+    }
+
+    .hero-copy h1 {
+      margin-bottom: var(--space-16);
+    }
+
+    .muted {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-lg);
+      margin-bottom: var(--space-24);
+    }
+
+    .badges {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-12);
+      margin-top: var(--space-24);
+    }
+
+    .badges li {
+      background: var(--color-secondary);
+      padding: var(--space-8) var(--space-16);
+      border-radius: var(--radius-base);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .hero-panel {
+      position: relative;
+      height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .glow {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, var(--color-primary) 0%, transparent 70%);
+      opacity: 0.3;
+      border-radius: 50%;
+      filter: blur(60px);
+    }
+
+    /* Cards */
+    .card {
+      background-color: var(--color-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-card-border);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-24);
+      transition: box-shadow var(--duration-normal) var(--ease-standard);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-16);
+    }
+
+    .pill {
+      background: var(--color-secondary);
+      padding: var(--space-4) var(--space-12);
+      border-radius: var(--radius-base);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .pill-warn {
+      background: rgba(var(--color-orange-500-rgb), 0.15);
+      color: var(--color-warning);
+    }
+
+    .list {
+      list-style: none;
+      margin: var(--space-20) 0;
+    }
+
+    .list li {
+      padding: var(--space-8) 0;
+      padding-left: var(--space-20);
+      position: relative;
+    }
+
+    .list li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--color-primary);
+      font-weight: var(--font-weight-bold);
+    }
+
+    /* Sections */
+    main {
+      padding: 60px 0;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-32);
+      margin-bottom: 60px;
+    }
+
+    .how {
+      margin-top: 60px;
+    }
+
+    .how ol {
+      padding-left: var(--space-24);
+    }
+
+    .how li {
+      margin-bottom: var(--space-12);
+      font-size: var(--font-size-lg);
+    }
+
+    /* Footer */
+    .foot {
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-card-border);
+      padding: var(--space-32) 0;
+      text-align: center;
+    }
+
+    .foot small {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+    }
+
+    /* Modal de Bienvenida */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: var(--space-16);
+    }
+
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    .modal-content {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: modalSlideIn 0.3s var(--ease-standard);
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-header {
+      padding: var(--space-24);
+      border-bottom: 1px solid var(--color-card-border);
+    }
+
+    .modal-header h2 {
+      margin-bottom: var(--space-8);
+      display: flex;
+      align-items: center;
+      gap: var(--space-12);
+    }
+
+    .modal-header .logo {
+      font-size: var(--font-size-3xl);
+    }
+
+    .modal-body {
+      padding: var(--space-24);
+    }
+
+    .welcome-section {
+      margin-bottom: var(--space-24);
+    }
+
+    .welcome-section h3 {
+      font-size: var(--font-size-xl);
+      font-weight: var(--font-weight-semibold);
+      margin-bottom: var(--space-12);
+      color: var(--color-text);
+    }
+
+    .welcome-section p {
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-12);
+      line-height: 1.6;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--space-16);
+      margin: var(--space-20) 0;
+    }
+
+    .info-card {
+      background: var(--color-secondary);
+      padding: var(--space-16);
+      border-radius: var(--radius-base);
+      border: 1px solid var(--color-border);
+    }
+
+    .info-card h4 {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      margin-bottom: var(--space-8);
+      color: var(--color-primary);
+    }
+
+    .info-card p {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: 0;
+    }
+
+    .features-list {
+      list-style: none;
+      margin: var(--space-16) 0;
+    }
+
+    .features-list li {
+      padding: var(--space-8) 0 var(--space-8) var(--space-24);
+      position: relative;
+      color: var(--color-text-secondary);
+    }
+
+    .features-list li:before {
+      content: "●";
+      position: absolute;
+      left: 0;
+      color: var(--color-primary);
+      font-size: var(--font-size-lg);
+    }
+
+    .modal-footer {
+      padding: var(--space-24);
+      border-top: 1px solid var(--color-card-border);
+      display: flex;
+      justify-content: center;
+    }
+
+    .modal-footer .btn {
+      width: auto;
+      min-width: 200px;
+      margin-top: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero-grid, .split {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        display: none;
+      }
+
+      .hero {
+        padding: 40px 0;
+      }
+
+      .hero-panel {
+        height: 200px;
+      }
+
+      h1 {
+        font-size: var(--font-size-3xl);
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-content {
+        margin: var(--space-16);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Modal de Bienvenida -->
+  <div id="welcomeModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>
+          <span class="logo" aria-hidden="true">▲</span>
+          Bienvenido a Capacitación en Alturas
+        </h2>
+      </div>
+      
+      <div class="modal-body">
+        <div class="welcome-section">
+          <h3>¿Qué es esta plataforma?</h3>
+          <p>
+            Una herramienta interactiva de capacitación diseñada para mejorar la seguridad 
+            en trabajos en altura. Utilizamos escenarios reales, métricas económicas y 
+            mejores prácticas para entrenar tanto a empleadores como a empleados.
+          </p>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-card">
+            <h4>📊 Para Empleadores</h4>
+            <p>Aprende sobre el impacto económico de los incidentes, cumplimiento normativo y retorno de inversión en prevención.</p>
+          </div>
+          <div class="info-card">
+            <h4>👷 Para Empleados</h4>
+            <p>Practica decisiones seguras con escenarios interactivos sobre arnés, anclajes, herramientas y señalización.</p>
+          </div>
+        </div>
+
+        <div class="welcome-section">
+          <h3>Características principales</h3>
+          <ul class="features-list">
+            <li>Contenido alineado con normativas de seguridad vigentes</li>
+            <li>Retroalimentación inmediata en cada decisión</li>
+            <li>Escenarios basados en situaciones reales de obra</li>
+            <li>Métricas de costos y consecuencias económicas</li>
+            <li>Recomendaciones personalizadas según tu desempeño</li>
+            <li>Diseño accesible y fácil de usar</li>
+          </ul>
+        </div>
+
+        <div class="welcome-section">
+          <h3>Cómo usar la plataforma</h3>
+          <p><strong>1.</strong> Elige el módulo según tu rol (Empleador o Empleado)</p>
+          <p><strong>2.</strong> Responde los escenarios prácticos con decisiones reales</p>
+          <p><strong>3.</strong> Recibe feedback inmediato y aprende de cada elección</p>
+          <p><strong>4.</strong> Obtén tu resumen final con puntaje y recomendaciones</p>
+        </div>
+
+        <div class="welcome-section">
+          <p style="font-size: var(--font-size-sm); color: var(--color-text-secondary); text-align: center;">
+            <strong>Nota:</strong> La seguridad en altura es responsabilidad de todos. 
+            Esta capacitación complementa, pero no reemplaza, la formación oficial requerida.
+          </p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="closeModal" class="btn btn-primary">Comenzar Capacitación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra superior -->
+  <header class="topbar" role="banner">
+    <div class="wrap">
+      <a class="brand" href="/" aria-label="Inicio">
+        <span class="logo" aria-hidden="true">▲</span>
+        Capacitación en Alturas
+      </a>
+      <nav class="nav" aria-label="principal">
+        <a href="#modulos">Módulos</a>
+        <a href="#como-funciona">Cómo funciona</a>
+      </nav>
+    </div>
+
+    <!-- Menú móvil -->
+    <nav id="navMobile" class="nav-mobile" hidden>
+      <a href="#modulos">Módulos</a>
+      <a href="#como-funciona">Cómo funciona</a>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <h1>Seguridad en altura, decisiones que salvan vidas</h1>
+        <p class="muted">
+          Entrena con escenarios reales, métricas económicas y buenas prácticas.
+          Elige tu rol y empieza ahora.
+        </p>
+        <div class="hero-cta">
+        </div>
+        <ul class="badges" aria-label="puntos clave">
+          <li>Contenido alineado a normativa</li>
+          <li>Feedback inmediato</li>
+          <li>Diseño accesible</li>
+        </ul>
+      </div>
+      <div class="hero-panel" aria-hidden="true">
+        <div class="glow"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Módulos -->
+  <main id="modulos" class="wrap">
+    <section class="split">
+      <!-- Empleadores -->
+      <article class="card">
+        <header class="card-head">
+          <h2>Empleadores</h2>
+          <span class="pill pill-warn">Costos & Cumplimiento</span>
+        </header>
+        <p>
+          Impacto económico de incidentes (multas, seguros, paralizaciones),
+          reputación, plazos y retorno de invertir en prevención.
+        </p>
+        <ul class="list">
+          <li>19 preguntas sobre costos y cumplimiento</li>
+          <li>Solo 1 respuesta correcta por pregunta</li>
+          <li>Formato de 4 opciones (A, B, C, D)</li>
+          <li>Escenarios con cifras y consecuencias reales</li>
+          <li>Feedback inmediato con explicación detallada</li>
+          <li>Videos e imágenes educativas</li>
+          <li>Resumen final con puntaje y nivel de conocimiento</li>
+        </ul>
+        <a class="btn btn-primary" href="empleadores.html">Ingresar al módulo</a>
+      </article>
+
+      <!-- Empleados -->
+      <article class="card">
+        <header class="card-head">
+          <h2>Empleados</h2>
+          <span class="pill">Práctica Segura</span>
+        </header>
+        <p>
+          Quiz interactivo de decisiones en altura: arnés, anclajes, orden y limpieza,
+          herramientas eléctricas y señalización. Consecuencias de salud y de obra.
+        </p>
+        <ul class="list">
+          <li>5 módulos especializados según área de trabajo</li>
+          <li>Varias preguntas interactivas por módulo</li>
+          <li>Formato de 4 opciones (A, B, C, D) con 1 respuesta correcta</li>
+          <li>Videos con final dependiendo según tu respuesta</li>
+          <li>Feedback inmediato con explicación detallada</li>
+          <li>Impacto de que pasaria si en cada cosa que hagas</li>
+          <li>Resumen final con puntaje y recomendaciones personalizadas</li>
+        </ul>
+        <a class="btn" href="empleados.html">Ingresar al módulo</a>
+      </article>
+    </section>
+
+    <!-- Cómo funciona -->
+    <section id="como-funciona" class="how card">
+      <h2>¿Cómo funciona?</h2>
+      <ol>
+        <li>Elige tu módulo según tu rol.</li>
+        <li>Responde escenarios prácticos con retroalimentación inmediata.</li>
+        <li>Recibe tu resumen: puntaje, costos estimados y mejoras sugeridas.</li>
+      </ol>
+    </section>
+  </main>
+
+  <!-- Pie -->
+  <footer class="foot">
+    <div class="wrap">
+      <small>© <span id="y"></span> Capacitación en Alturas. Todos los derechos reservados</small>
+    </div>
+  </footer>
+
+  <script>
+    // año
+    document.getElementById('y').textContent = new Date().getFullYear();
+    
+    // Modal de bienvenida
+    const modal = document.getElementById('welcomeModal');
+    const closeBtn = document.getElementById('closeModal');
+    
+    closeBtn.addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+
+    // Cerrar al hacer clic fuera del modal
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.add('hidden');
+      }
+    });
+
+    // Cerrar con tecla Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+        modal.classList.add('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

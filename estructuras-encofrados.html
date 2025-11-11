@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Gestión de trabajos en estructuras metálicas y encofrados — Simulador</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0f1a; --panel:#0f1726; --card:#121c2f; --muted:#9fb0c3; --text:#eaf2ff;
+    --stroke:#22324b; --brand1:#2dd4bf; --brand2:#3b82f6; --ok:#22c55e; --bad:#ef4444; --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(59,130,246,.18), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(45,212,191,.15), transparent 55%),
+    var(--bg); color:var(--text); line-height:1.6}
+  .wrap{max-width:1100px;margin:0 auto;padding:1rem 1.25rem 2rem}
+  header{position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);
+    background:linear-gradient(180deg, rgba(6,10,18,.75), rgba(6,10,18,.3));
+    border-bottom:1px solid rgba(147,197,253,.12)}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:1rem;
+    background:linear-gradient(180deg, rgba(18,28,47,.7), rgba(18,28,47,.3));
+    border:1px solid var(--stroke); padding:.9rem 1rem; border-radius:14px}
+  .progressbar{width:100%;height:8px;background:#0c1526;border-radius:999px;overflow:hidden}
+  .progressbar>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand1),var(--brand2))}
+  .hud{display:flex;gap:1rem;color:#cfe2ff}
+  .pill{background:#10213a;border:1px solid #2a4269;border-radius:999px;padding:.2rem .6rem;font-size:.85rem}
+  .card{margin-top:1rem;background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:1.1rem; box-shadow:0 10px 24px rgba(0,0,0,.25)}
+  .title{margin:.2rem 0 .1rem;font-size:clamp(1.2rem,2.6vw,1.6rem);font-weight:800}
+  .subtitle{margin:0 0 .8rem;color:var(--muted)}
+  .options{display:grid;gap:.6rem}
+  .opt{display:flex;gap:.6rem;align-items:flex-start;padding:.7rem .8rem;background:#0e1a2c;border:1px solid #20324f;border-radius:12px;cursor:pointer}
+  .opt:hover{border-color:#3a5e90;background:#10233e}
+  .opt input{margin-top:.1rem}
+  .actions{display:flex;gap:.6rem;margin-top:1rem;flex-wrap:wrap}
+  .btn{border:none;border-radius:12px;padding:.6rem .95rem;cursor:pointer;font-weight:800}
+  .btn.primary{background:linear-gradient(90deg,var(--brand1),var(--brand2));color:#081018}
+  .btn.secondary{background:#12233e;color:#cae0ff;border:1px solid #2a4269}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .feedback{margin-top:.9rem;border-left:4px solid #2a4269;background:#0f1c30;border-radius:10px;padding:.65rem .8rem;display:none}
+  .feedback.ok{border-left-color:var(--ok)} .feedback.bad{border-left-color:var(--bad)}
+  video{display:none;width:100%;max-height:360px;border-radius:12px;margin-top:.6rem;background:#000}
+  .results{display:none;margin-top:1rem;background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:1.1rem}
+  .results h2{margin:.2rem 0 .6rem;font-size:1.4rem}
+  .grid2{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .metric{background:#0e1a2c;border:1px solid #20324f;border-radius:12px;padding:.8rem}
+  .metric .big{font-size:1.6rem;font-weight:800}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div style="display:flex;gap:.6rem;align-items:center;color:#cfe2ff">
+          <strong id="qCounter">Pregunta 1/18</strong>
+          <span class="pill" id="scorePill">Puntaje: 0</span>
+          <span class="pill" id="skipsPill">Saltadas: 0</span>
+        </div>
+        <div class="progressbar" aria-label="Progreso"><span id="progressFill"></span></div>
+      </div>
+      <div class="hud"><span class="pill">Módulo: Estructuras & Encofrados</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" id="qCard" aria-live="polite">
+    <h2 class="title" id="qTitle">Título</h2>
+    <p class="subtitle" id="qSubtitle">Enunciado</p>
+    <form class="options" id="optForm"></form>
+    <div class="actions">
+      <button class="btn secondary" id="skipBtn" type="button">Saltar</button>
+      <button class="btn primary" id="nextBtn" type="button">Siguiente</button>
+    </div>
+    <div id="feedback" class="feedback"></div>
+    <video id="qVideo" controls preload="metadata"></video>
+  </section>
+
+  <section class="results" id="results">
+    <h2>Resultados del módulo</h2>
+    <div class="grid2">
+      <div class="metric"><div>Respuestas correctas</div><div class="big" id="mCorrect">0</div></div>
+      <div class="metric"><div>Respuestas incorrectas</div><div class="big" id="mWrong">0</div></div>
+      <div class="metric"><div>Preguntas saltadas</div><div class="big" id="mSkipped">0</div></div>
+      <div class="metric"><div>% de capacitación</div><div class="big" id="mPercent">0%</div></div>
+    </div>
+    <p style="color:var(--muted);margin-top:.8rem" id="mHint"></p>
+
+    <!-- FORMULARIO PARA GUARDAR NOMBRE -->
+    <div id="formNombre" style="margin-top:1.5rem;padding:1rem;background:#0e1a2c;border:1px solid #20324f;border-radius:12px;">
+      <label for="nombreUsuario" style="display:block;margin-bottom:.5rem;font-weight:600;color:#eaf2ff;">
+        💾 Ingresa tu nombre para guardar tu resultado:
+      </label>
+      <input 
+        type="text" 
+        id="nombreUsuario" 
+        placeholder="Tu nombre completo"
+        maxlength="100"
+        style="width:100%;padding:.6rem;border-radius:8px;border:1px solid #2a4269;background:#0b1328;color:#eaf2ff;font-size:1rem;margin-bottom:.7rem;"
+      />
+      <button 
+        onclick="guardarResultadoSupabase()" 
+        class="btn primary"
+        style="width:100%;"
+      >
+        💾 Guardar Resultado
+      </button>
+    </div>
+
+    <!-- MENSAJE DE CONFIRMACIÓN -->
+    <div id="mensajeGuardado" style="display:none;margin-top:1rem;padding:.8rem;background:#10b981;color:#fff;border-radius:8px;text-align:center;font-weight:700;"></div>
+
+    <div class="actions" style="margin-top:1rem">
+      <button class="btn primary" type="button" id="restartBtn">Reiniciar módulo</button>
+      <a class="btn secondary" href="empleados.html">Volver a Empleados</a>
+    </div>
+  </section>
+</main>
+
+<script>
+  function shuffle(a){ const r=a.slice(); for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];} return r; }
+
+  const questions = [
+    {
+      title:"Equipo clave contra caídas",
+      subtitle:"¿Cuál es el equipo de seguridad más importante para proteger al trabajador contra caídas al trabajar en estructuras metálicas o encofrados?",
+      options:[
+        {text:"Casco con barboquejo", feedbackIncorrect:"Fundamental, pero no es el principal para prevenir caídas."},
+        {text:"Gafas de seguridad", feedbackIncorrect:"Protegen ojos, no evitan caídas."},
+        {text:"Arnés con doble cabo de vida", correct:true, feedbackCorrect:"Esencial para evitar caídas y asegurar al trabajador."},
+        {text:"Guantes de cuero", feedbackIncorrect:"Importantes para manos, no para caídas."}
+      ],
+      media:{ok:"estructura1.mp4", bad:"estructura2.mp4"}
+    },
+    {
+      title:"Por qué barboquejo",
+      subtitle:"¿Por qué es crucial que los trabajadores usen un casco con barboquejo al trabajar en estructuras metálicas?",
+      options:[
+        {text:"Para mantener el casco en su lugar, incluso en movimientos bruscos o caídas", correct:true, feedbackCorrect:"El barboquejo mantiene el casco firme."},
+        {text:"Para asegurar que el casco se vea bien mientras se trabaja", feedbackIncorrect:"La prioridad es la seguridad, no la estética."},
+        {text:"Para proteger la cabeza del calor extremo de las superficies metálicas", feedbackIncorrect:"El casco es para impactos."},
+        {text:"Para evitar que el trabajador se lastime al subir o bajar", feedbackIncorrect:"Su función principal es prevenir impactos."}
+      ],
+      media:{ok:"estructura3.mp4", bad:"estructura4.mp4"}
+    },
+    {
+      title:"Arnés dañado",
+      subtitle:"¿Qué debe hacer un trabajador si nota que su arnés con doble cabo de vida está dañado durante un trabajo en altura?",
+      options:[
+        {text:"Continuar trabajando con el arnés dañado hasta que termine su tarea", feedbackIncorrect:"Extremadamente peligroso."},
+        {text:"Ajustar el arnés lo mejor posible y seguir trabajando", feedbackIncorrect:"Si está dañado, debe reemplazarse."},
+        {text:"Informar inmediatamente al supervisor y esperar la sustitución del equipo", correct:true, feedbackCorrect:"Reemplazar antes de continuar."},
+        {text:"Usar el arnés de cualquier manera, ya que no representa un gran peligro", feedbackIncorrect:"No proporciona seguridad adecuada."}
+      ],
+      media:{ok:"estructura5.mp4", bad:"estructura6.mp4"}
+    },
+    {
+      title:"Riesgo sin protección ocular",
+      subtitle:"¿Qué riesgo representa trabajar sin gafas de seguridad o careta en un entorno de trabajo con estructuras metálicas?",
+      options:[
+        {text:"Solo riesgo de incomodidad visual", feedbackIncorrect:"El riesgo real es daño ocular."},
+        {text:"Posibles lesiones oculares por chispas, partículas voladoras o polvo", correct:true, feedbackCorrect:"Protegen de chispas y partículas."},
+        {text:"Ningún riesgo, ya que las partículas son muy pequeñas", feedbackIncorrect:"Pueden causar lesiones graves."},
+        {text:"Riesgo de que la visión se vea afectada solo por el sol", feedbackIncorrect:"El riesgo existe independientemente del sol."}
+      ],
+      media:{ok:"estructura8.mp4", bad:"estructura8.mp4"}
+    },
+    {
+      title:"Función de guantes de cuero",
+      subtitle:"¿Cuál es la principal función de los guantes de cuero en los trabajos en estructuras metálicas y encofrados?",
+      options:[
+        {text:"Mejorar el agarre de las herramientas", correct:true, feedbackCorrect:"Ayudan al agarre y protegen las manos."},
+        {text:"Proteger las manos del frío", feedbackIncorrect:"Su fin es prevenir cortes/abrasiones."},
+        {text:"Mantener las manos limpias durante el trabajo", feedbackIncorrect:"La limpieza no es lo principal."},
+        {text:"Evitar lesiones por contacto con superficies metálicas y objetos afilados", feedbackIncorrect:"La opción correcta es la primera."}
+      ],
+      media:{ok:"estructura9.mp4", bad:"estructura10.mp4"}
+    },
+    {
+      title:"Botas adecuadas",
+      subtitle:"¿Por qué es importante usar botas dieléctricas o antiperforación al trabajar en estructuras metálicas?",
+      options:[
+        {text:"Para evitar que los pies se mojen con el contacto con materiales húmedos", feedbackIncorrect:"No es su propósito principal."},
+        {text:"Para proteger los pies de caídas de objetos pesados y evitar perforaciones por materiales metálicos", correct:true, feedbackCorrect:"Protegen de golpes y perforaciones."},
+        {text:"Para mantener los pies cómodos durante largos turnos de trabajo", feedbackIncorrect:"La seguridad es lo central."},
+        {text:"Para mejorar la visibilidad del trabajador en el sitio de trabajo", feedbackIncorrect:"No mejora visibilidad."}
+      ],
+      media:{ok:"estructura11.mp4", bad:"estructura12.mp4"}
+    },
+    {
+      title:"Equipo inestable",
+      subtitle:"¿Qué debe hacer un trabajador si la escalera o el andamio que está usando parece inestable?",
+      options:[
+        {text:"Continuar trabajando, ya que el riesgo es mínimo", feedbackIncorrect:"Peligro severo."},
+        {text:"Ajustar la posición de la escalera o andamio para que quede más estable", feedbackIncorrect:"No garantiza estabilidad."},
+        {text:"Informar al supervisor inmediatamente y suspender el trabajo hasta que el equipo sea verificado", correct:true, feedbackCorrect:"Reportar y detener hasta verificar."},
+        {text:"Subir y trabajar con más cuidado para evitar caídas", feedbackIncorrect:"No elimina el riesgo."}
+      ],
+      media:{ok:"estructura13.mp4", bad:"estructura14.mp4"}
+    },
+    {
+      title:"Ajuste de arnés",
+      subtitle:"¿Qué debe hacer un trabajador al notar que su arnés de seguridad no está correctamente colocado mientras trabaja en una estructura metálica?",
+      options:[
+        {text:"Continuar trabajando y ajustar el arnés más tarde", feedbackIncorrect:"Debe ajustarse de inmediato."},
+        {text:"Ajustar el arnés en ese momento para que quede bien colocado", correct:true, feedbackCorrect:"Ajuste inmediato para protección real."},
+        {text:"Ignorar el problema, ya que no es un gran riesgo", feedbackIncorrect:"Aumenta riesgo de caída."},
+        {text:"Suspender el trabajo hasta que el supervisor ajuste el arnés correctamente", feedbackIncorrect:"El trabajador debe ajustarlo sin esperar."}
+      ],
+      media:{ok:"estructura15.mp4", bad:"estructura16.mp4"}
+    },
+    {
+      title:"Superficie resbaladiza",
+      subtitle:"¿Qué debe hacer un trabajador si se encuentra con una superficie metálica resbaladiza en una estructura mientras está trabajando?",
+      options:[
+        {text:"Continuar trabajando sin precauciones, ya que el trabajo no se ve afectado", feedbackIncorrect:"Incrementa el riesgo de accidente."},
+        {text:"Informar al supervisor para que se tomen medidas para asegurar la superficie", correct:true, feedbackCorrect:"El supervisor debe gestionar medidas de control."},
+        {text:"Ajustar la escalera para adaptarla a la superficie resbaladiza", feedbackIncorrect:"No resuelve la causa."},
+        {text:"Usar más fuerza para mantenerse estable", feedbackIncorrect:"No es una solución segura."}
+      ],
+      media:{ok:"estructura17.mp4", bad:"estructura18.mp4"}
+    },
+    {
+      title:"Equipo defectuoso",
+      subtitle:"¿Qué debe hacer un trabajador si nota que su equipo de seguridad (como el casco o los guantes) están defectuosos?",
+      options:[
+        {text:"Continuar trabajando y reemplazar el equipo cuando termine el turno", feedbackIncorrect:"Debe reemplazarse de inmediato."},
+        {text:"Informar al supervisor y suspender el trabajo hasta que se reemplace el equipo defectuoso", correct:true, feedbackCorrect:"Parar y reemplazar antes de continuar."},
+        {text:"Usar el equipo defectuoso hasta que el supervisor lo reemplace", feedbackIncorrect:"Inaceptable por seguridad."},
+        {text:"No informar sobre el defecto, ya que el trabajo no se ve afectado", feedbackIncorrect:"Ignorar riesgos aumenta lesiones."}
+      ],
+      media:{ok:"estructura19.mp4", bad:"estructura20.mp4"}
+    },
+    {
+      title:"Primero al llegar",
+      subtitle:"¿Qué es lo primero que un trabajador debe hacer al llegar a una estructura metálica para comenzar a trabajar?",
+      options:[
+        {text:"Colocar las herramientas en el lugar de trabajo", feedbackIncorrect:"Primero se verifica seguridad."},
+        {text:"Inspeccionar el equipo de seguridad, incluida la escalera y las herramientas", correct:true, feedbackCorrect:"Inspección inicial previene accidentes."},
+        {text:"Asegurarse de que los materiales estén disponibles y organizados", feedbackIncorrect:"Importante, pero no lo primero."},
+        {text:"Comenzar a trabajar sin revisar nada", feedbackIncorrect:"Pone en peligro la vida."}
+      ],
+      media:{ok:"estructura21.mp4", bad:"estructura22.mp4"}
+    },
+    {
+      title:"Riesgo eléctrico",
+      subtitle:"¿Qué medida adicional debe tomarse si el trabajo en estructuras metálicas implica riesgos eléctricos?",
+      options:[
+        {text:"Usar guantes de cuero únicamente", feedbackIncorrect:"Insuficiente contra descargas."},
+        {text:"Usar botas dieléctricas para evitar descargas eléctricas", correct:true, feedbackCorrect:"Protegen frente a posibles descargas."},
+        {text:"No es necesario tomar ninguna medida adicional, ya que la estructura es metálica", feedbackIncorrect:"La estructura conduce electricidad."},
+        {text:"Continuar sin equipo adicional, el riesgo no es significativo", feedbackIncorrect:"Debe abordarse con EPP adecuado."}
+      ],
+      media:{ok:"estructura23.mp4", bad:"estructura24.mp4"}
+    },
+    {
+      title:"Sin arnés en altura",
+      subtitle:"¿Qué consecuencias podría tener el no usar un arnés de seguridad mientras se trabaja en altura en estructuras metálicas?",
+      options:[
+        {text:"Ningún impacto, ya que la estructura metálica es segura por sí sola", feedbackIncorrect:"Siempre es necesario arnés."},
+        {text:"Mayor riesgo de caídas y lesiones graves que podrían ser fatales", correct:true, feedbackCorrect:"Previene caídas y fatalidades."},
+        {text:"Menos incomodidad al trabajar sin el arnés", feedbackIncorrect:"La comodidad no justifica el riesgo."},
+        {text:"No hay impacto, ya que la estructura no es tan alta", feedbackIncorrect:"Aun alturas moderadas son peligrosas."}
+      ],
+      media:{ok:"estructura25.mp4", bad:"estructura26.mp4"}
+    },
+    {
+      title:"Casco cayó",
+      subtitle:"¿Qué debe hacer un trabajador si el casco de seguridad que usa se cae durante el trabajo?",
+      options:[
+        {text:"Continuar trabajando sin el casco", feedbackIncorrect:"Nunca se trabaja sin casco."},
+        {text:"Revisar el casco por posibles daños y, si es necesario, reemplazarlo", correct:true, feedbackCorrect:"Inspección y reemplazo si corresponde."},
+        {text:"Colocar el casco de vuelta sin revisar y seguir trabajando", feedbackIncorrect:"Una caída puede dañarlo."},
+        {text:"Esperar que el supervisor revise el casco antes de continuar", feedbackIncorrect:"El propio trabajador debe revisar primero."}
+      ],
+      media:{ok:"estructura27.mp4", bad:"estructura28.mp4"}
+    },
+    {
+      title:"Inspección previa",
+      subtitle:"¿Por qué es importante realizar una inspección antes de comenzar el trabajo en estructuras metálicas y encofrados?",
+      options:[
+        {text:"Para asegurarse de que el trabajo pueda completarse a tiempo", feedbackIncorrect:"La prioridad es seguridad, no el tiempo."},
+        {text:"Para verificar que el equipo y las herramientas estén en buen estado y sean seguros para su uso", correct:true, feedbackCorrect:"Previene accidentes al inicio."},
+        {text:"Solo para organizar los materiales de trabajo", feedbackIncorrect:"La inspección va más allá de organizar."},
+        {text:"Para ver si es necesario reemplazar el equipo de protección personal", feedbackIncorrect:"No solo EPP; es verificar todo el conjunto."}
+      ],
+      media:{ok:"estructura29.mp4", bad:"estructura30.mp4"}
+    },
+    {
+      title:"Acción ante accidente de caída desde altura",
+      subtitle:"¿Cuál es la primera acción que debe tomar un obrero al presenciar un accidente de caída desde altura?",
+      options:[
+        {text:"Llamar inmediatamente a los servicios de emergencia.", correct:true, feedbackCorrect:"La primera acción debe ser alertar a los profesionales para una atención rápida y segura."},
+        {text:"Intentar mover a la persona herida sin esperar ayuda.", feedbackIncorrect:"Esto puede agravar lesiones, especialmente de columna o fracturas."},
+        {text:"Ignorar la situación y continuar trabajando.", feedbackIncorrect:"No intervenir pone en riesgo al afectado y al resto del equipo."},
+        {text:"Evacuar rápidamente el área para evitar más accidentes.", feedbackIncorrect:"Primero hay que activar el protocolo de emergencias antes de evacuar."}
+      ],
+      media:{ok:"andamiop1x30.mp4", bad:"andamiop1x31.mp4"}
+    },
+    {
+      title:"Acción incorrecta tras una caída",
+      subtitle:"¿Qué acción es incorrecta cuando un obrero observa a un compañero que ha caído desde una altura?",
+      options:[
+        {text:"Evaluar la situación sin mover al herido y esperar ayuda profesional.", feedbackIncorrect:"Es correcto no mover al herido y esperar ayuda adecuada si no hay peligro inmediato."},
+        {text:"Comenzar a administrar primeros auxilios sin formación adecuada.", correct:true, feedbackCorrect:"Es un error ayudar sin capacitación porque puede agravar lesiones graves."},
+        {text:"Mantener la calma y dirigir a los demás trabajadores para crear un espacio seguro.", feedbackIncorrect:"Fundamental para evitar nuevos riesgos y coordinar la ayuda."},
+        {text:"Usar equipo de protección personal adecuado antes de acercarse al herido.", feedbackIncorrect:"Siempre se debe usar EPP para auto-protección y evitar contaminaciones."}
+      ],
+      media:{ok:"andamiop1x32.mp4", bad:"andamiop1x33.mp4"}
+    },
+    {
+      title:"Valor personal y seguridad en altura",
+      subtitle:"¿Por qué es fundamental que un trabajador valore su vida mientras realiza tareas en alturas considerables?",
+      options:[
+        {text:"Porque su vida solo le pertenece a él", feedbackIncorrect:"La seguridad del trabajador también afecta a quienes lo rodean."},
+        {text:"Porque su seguridad también afecta la vida de sus seres queridos y su futuro", correct:true, feedbackCorrect:"Protegerse significa cuidar también a familia y entorno."},
+        {text:"Porque su trabajo no tiene importancia si no valora su vida", feedbackIncorrect:"La seguridad pone en valor el trabajo y la vida de todos."},
+        {text:"Porque el riesgo solo lo afecta a él, no a los demás", feedbackIncorrect:"Un accidente impacta a muchas personas, no solo al trabajador."}
+      ],
+      media:{ok:"andamiop1x34.mp4", bad:"andamiop1x35.mp4"}
+    },
+    {
+      title:"Valorar la vida en estructuras metálicas",
+      subtitle:"¿Cómo puede un trabajador asegurarse de que está valorando su vida mientras trabaja en estructuras metálicas?",
+      options:[
+        {text:"Solo cuidándose a sí mismo sin preocuparse por el equipo de seguridad", feedbackIncorrect:"El uso de EPP y cumplir los protocolos es esencial, no solo protegerse individualmente."},
+        {text:"Usando todo el equipo de protección personal (EPP) necesario y siguiendo los protocolos de seguridad", correct:true, feedbackCorrect:"Usar EPP y seguir procedimientos demuestra valoración de la propia vida."},
+        {text:"Trabajando lo más rápido posible para terminar antes", feedbackIncorrect:"La prioridad debe ser la seguridad, no la velocidad."},
+        {text:"Ignorando los riesgos si tiene experiencia en el trabajo", feedbackIncorrect:"La experiencia no elimina los riesgos."}
+      ],
+      media:{ok:"andamiop1x36.mp4", bad:"andamiop1x37.mp4"}
+    }
+  ];
+
+  let idx=0, score=0, skipped=0, wrong=0, answeredCurrent=false;
+  let shuffledOptions=[];
+
+  const el = {
+    qTitle: document.getElementById('qTitle'),
+    qSubtitle: document.getElementById('qSubtitle'),
+    form: document.getElementById('optForm'),
+    next: document.getElementById('nextBtn'),
+    skip: document.getElementById('skipBtn'),
+    feedback: document.getElementById('feedback'),
+    video: document.getElementById('qVideo'),
+    qCounter: document.getElementById('qCounter'),
+    scorePill: document.getElementById('scorePill'),
+    skipsPill: document.getElementById('skipsPill'),
+    progress: document.getElementById('progressFill'),
+    results: document.getElementById('results'),
+    qCard: document.getElementById('qCard'),
+    mCorrect: document.getElementById('mCorrect'),
+    mWrong: document.getElementById('mWrong'),
+    mSkipped: document.getElementById('mSkipped'),
+    mPercent: document.getElementById('mPercent'),
+    mHint: document.getElementById('mHint'),
+    restart: document.getElementById('restartBtn'),
+  };
+
+  function renderQuestion(){
+    const q=questions[idx];
+    answeredCurrent=false;
+    el.video.pause(); el.video.currentTime=0; el.video.style.display='none';
+    el.feedback.style.display='none'; el.feedback.textContent=''; el.feedback.className='feedback';
+    el.qTitle.textContent=q.title;
+    el.qSubtitle.textContent=q.subtitle||'';
+    shuffledOptions = shuffle(q.options).map((o,i)=>({...o,_i:i}));
+    el.form.innerHTML='';
+    shuffledOptions.forEach((opt,i)=>{
+      const lab=document.createElement('label');
+      lab.className='opt';
+      lab.innerHTML = `<input type="radio" name="opt" value="${i}"><div><strong>${String.fromCharCode(65+i)})</strong> ${opt.text}</div>`;
+      el.form.appendChild(lab);
+    });
+    el.qCounter.textContent=`Pregunta ${idx+1}/${questions.length}`;
+    el.progress.style.width=(idx/questions.length)*100 + '%';
+    el.next.textContent='Siguiente';
+    el.next.disabled=false;
+  }
+
+  function checkAndShow(){
+    const sel = el.form.querySelector('input[type="radio"]:checked');
+    if(!sel){ alert('Selecciona una opción o usa "Saltar".'); return false; }
+    const choice = parseInt(sel.value,10);
+    const chosen = shuffledOptions[choice];
+    const isCorrect = !!chosen.correct;
+    answeredCurrent = true;
+    if(isCorrect){
+      score++;
+      el.feedback.classList.add('ok');
+      el.feedback.textContent = chosen.feedbackCorrect || '¡Correcto!';
+      el.video.src = questions[idx].media.ok;
+    }else{
+      wrong++;
+      el.feedback.classList.add('bad');
+      el.feedback.textContent = chosen.feedbackIncorrect || 'Respuesta incorrecta.';
+      el.video.src = questions[idx].media.bad;
+    }
+    el.feedback.style.display='block';
+    el.video.style.display='block';
+    el.video.play().catch(()=>{});
+    el.form.querySelectorAll('input').forEach(i=>i.disabled=true);
+    el.scorePill.textContent=`Puntaje: ${score}`;
+    el.next.textContent = (idx===questions.length-1) ? 'Finalizar' : 'Siguiente';
+    return true;
+  }
+
+  function skipQuestion(){ skipped++; el.skipsPill.textContent=`Saltadas: ${skipped}`; goNext(); }
+  function goNext(){ if(idx<questions.length-1){ idx++; renderQuestion(); } else { showResults(); } }
+
+  function showResults(){
+    el.progress.style.width='100%';
+    el.qCard.style.display='none';
+    el.results.style.display='block';
+    const total=questions.length, percent=Math.round((score/total)*100);
+    el.mCorrect.textContent=score;
+    el.mWrong.textContent=wrong;
+    el.mSkipped.textContent=skipped;
+    el.mPercent.textContent=percent+'%';
+    let hint='Nivel de capacitación: ';
+    if(percent>=90) hint+='Excelente ✅';
+    else if(percent>=75) hint+='Adecuado 👍';
+    else if(percent>=60) hint+='Básico ⚠️';
+    else hint+='Insuficiente ❌';
+    el.mHint.textContent=hint;
+  }
+
+  el.next.addEventListener('click', ()=>{ if(!answeredCurrent){ if(!checkAndShow()) return; } else { goNext(); } });
+  el.skip.addEventListener('click', skipQuestion);
+  el.restart.addEventListener('click', ()=>{ 
+    idx=0;score=0;skipped=0;wrong=0; 
+    el.qCard.style.display='block'; 
+    el.results.style.display='none'; 
+    el.scorePill.textContent='Puntaje: 0'; 
+    el.skipsPill.textContent='Saltadas: 0'; 
+    resetearFormularioNombre();
+    renderQuestion(); 
+  });
+
+  renderQuestion();
+</script>
+
+<!-- ==================== INTEGRACIÓN SUPABASE ==================== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://cjwocxsfcqllhzhlasuf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqd29jeHNmY3FsbGh6aGxhc3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyOTg1MDcsImV4cCI6MjA3Nzg3NDUwN30.B7HYB7nv7cE5sAfRjRTJSGYnRx18cubfroNyet1mt_A';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function obtenerNombreModulo() {
+  const titulo = document.title.toLowerCase(); // Convierte a minúsculas
+  
+  if (titulo.includes('estructuras') || titulo.includes('encofrados')) {
+    return 'Estructuras y Encofrados';
+  }
+  if (titulo.includes('supervisores')) {
+    return 'Supervisores';
+  }
+  if (titulo.includes('andamios')) {
+    return 'Andamios';
+  }
+  if (titulo.includes('cubiertas') || titulo.includes('techos')) {
+    return 'Cubiertas y Techos';
+  }
+  if (titulo.includes('escaleras')) {
+    return 'Escaleras';
+  }
+  if (titulo.includes('empleadores')) {
+    return 'Empleadores';
+  }
+  
+  return document.title; // Devuelve título completo si no coincide
+}
+
+async function guardarResultadoSupabase() {
+  const nombre = document.getElementById('nombreUsuario').value.trim();
+  if (!nombre) {
+    alert('⚠️ Por favor ingresa tu nombre para guardar el resultado');
+    return;
+  }
+
+  const btnGuardar = event.target;
+  const textoOriginal = btnGuardar.textContent;
+  btnGuardar.textContent = '⏳ Guardando...';
+  btnGuardar.disabled = true;
+
+  const modulo = obtenerNombreModulo();
+  const correcto = parseInt(document.getElementById('mCorrect').textContent, 10);
+  const incorrecto = parseInt(document.getElementById('mWrong').textContent, 10);
+  const saltado = parseInt(document.getElementById('mSkipped').textContent, 10);
+  const porcentaje = parseInt(document.getElementById('mPercent').textContent, 10);
+  const puntaje = correcto * 100;
+
+  console.log('Guardando:', { nombre, modulo, puntaje, correcto, incorrecto, saltado, porcentaje }); // Para debug
+
+  const { data, error } = await supabase
+    .from('resultados_test')
+    .insert([{
+      nombre: nombre,
+      modulo: modulo,
+      puntaje: puntaje,
+      correcto: correcto,
+      incorrecto: incorrecto,
+      saltado: saltado,
+      porcentaje: porcentaje
+    }]);
+
+  if (error) {
+    console.error('Error:', error);
+    alert('❌ Error al guardar: ' + error.message);
+    btnGuardar.textContent = textoOriginal;
+    btnGuardar.disabled = false;
+  } else {
+    document.getElementById('mensajeGuardado').style.display = 'block';
+    document.getElementById('mensajeGuardado').textContent = '✅ ¡Resultado guardado correctamente! Puedes reiniciar para intentar de nuevo.';
+    document.getElementById('formNombre').style.display = 'none';
+  }
+}
+
+function resetearFormularioNombre() {
+  document.getElementById('formNombre').style.display = 'block';
+  document.getElementById('mensajeGuardado').style.display = 'none';
+  document.getElementById('nombreUsuario').value = '';
+}
+</script>
+</body>
+</html>

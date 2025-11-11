@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Gestión de trabajo sobre andamios — Simulador</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0f1a; --panel:#0f1726; --card:#121c2f; --muted:#9fb0c3; --text:#eaf2ff;
+    --stroke:#22324b; --brand1:#2dd4bf; --brand2:#3b82f6; --ok:#22c55e; --bad:#ef4444; --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(59,130,246,.18), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(45,212,191,.15), transparent 55%),
+    var(--bg); color:var(--text); line-height:1.6}
+  .wrap{max-width:1100px;margin:0 auto;padding:1rem 1.25rem 2rem}
+  header{position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);
+    background:linear-gradient(180deg, rgba(6,10,18,.75), rgba(6,10,18,.3));
+    border-bottom:1px solid rgba(147,197,253,.12)}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:1rem;
+    background:linear-gradient(180deg, rgba(18,28,47,.7), rgba(18,28,47,.3));
+    border:1px solid var(--stroke); padding:.9rem 1rem; border-radius:14px}
+  .progressbar{width:100%;height:8px;background:#0c1526;border-radius:999px;overflow:hidden;margin-top:.5rem}
+  .progressbar>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand1),var(--brand2));transition:width .3s ease}
+  .hud{display:flex;gap:1rem;color:#cfe2ff}
+  .pill{background:#10213a;border:1px solid #2a4269;border-radius:999px;padding:.2rem .6rem;font-size:.85rem}
+  .card{margin-top:1rem;background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:1.1rem;box-shadow:0 10px 24px rgba(0,0,0,.25)}
+  .title{margin:.2rem 0 .1rem;font-size:clamp(1.2rem,2.6vw,1.6rem);font-weight:800}
+  .subtitle{margin:0 0 .8rem;color:var(--muted)}
+  .options{display:grid;gap:.6rem}
+  .opt{display:flex;gap:.6rem;align-items:flex-start;padding:.7rem .8rem;background:#0e1a2c;border:1px solid #20324f;border-radius:12px;cursor:pointer}
+  .opt:hover{border-color:#3a5e90;background:#10233e}
+  .opt input{margin-top:.1rem}
+  .actions{display:flex;gap:.6rem;margin-top:1rem;flex-wrap:wrap}
+  .btn{border:none;border-radius:12px;padding:.6rem .95rem;cursor:pointer;font-weight:800}
+  .btn.primary{background:linear-gradient(90deg,var(--brand1),var(--brand2));color:#081018}
+  .btn.secondary{background:#12233e;color:#cae0ff;border:1px solid #2a4269}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .feedback{margin-top:.9rem;border-left:4px solid #2a4269;background:#0f1c30;border-radius:10px;padding:.65rem .8rem;display:none}
+  .feedback.ok{border-left-color:var(--ok)} .feedback.bad{border-left-color:var(--bad)}
+  video{display:none;width:100%;max-height:360px;border-radius:12px;margin-top:.6rem;background:#000}
+  .results{display:none;margin-top:1rem;background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:1.1rem}
+  .results h2{margin:.2rem 0 .6rem;font-size:1.4rem}
+  .grid2{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .metric{background:#0e1a2c;border:1px solid #20324f;border-radius:12px;padding:.8rem}
+  .metric .big{font-size:1.6rem;font-weight:800}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div style="display:flex;gap:.6rem;align-items:center;color:#cfe2ff">
+          <strong id="qCounter">Pregunta 1/19</strong>
+          <span class="pill" id="scorePill">Puntaje: 0</span>
+          <span class="pill" id="skipsPill">Saltadas: 0</span>
+        </div>
+        <div class="progressbar"><span id="progressFill"></span></div>
+      </div>
+      <div class="hud"><span class="pill">Módulo: Andamios</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" id="qCard">
+    <h2 class="title" id="qTitle">Título</h2>
+    <p class="subtitle" id="qSubtitle">Descripción</p>
+    <form class="options" id="optForm"></form>
+    <div class="actions">
+      <button class="btn secondary" id="skipBtn" type="button">Saltar</button>
+      <button class="btn primary" id="nextBtn" type="button">Siguiente</button>
+    </div>
+    <div id="feedback" class="feedback"></div>
+    <video id="qVideo" controls preload="metadata"></video>
+  </section>
+
+  <section class="results" id="results">
+    <h2>Resultados del módulo</h2>
+    <div class="grid2">
+      <div class="metric"><div>Respuestas correctas</div><div class="big" id="mCorrect">0</div></div>
+      <div class="metric"><div>Respuestas incorrectas</div><div class="big" id="mWrong">0</div></div>
+      <div class="metric"><div>Preguntas saltadas</div><div class="big" id="mSkipped">0</div></div>
+      <div class="metric"><div>% de capacitación</div><div class="big" id="mPercent">0%</div></div>
+    </div>
+    <p style="color:var(--muted);margin-top:.8rem" id="mHint"></p>
+
+    <div id="formNombre" style="margin-top:1.5rem;padding:1rem;background:#0e1a2c;border:1px solid #20324f;border-radius:12px">
+      <label for="nombreUsuario" style="display:block;margin-bottom:.5rem;font-weight:600;color:#eaf2ff">
+        💾 Ingresa tu nombre para guardar tu resultado:
+      </label>
+      <input type="text" id="nombreUsuario" placeholder="Tu nombre completo" maxlength="100"
+        style="width:100%;padding:.6rem;border-radius:8px;border:1px solid #2a4269;background:#0b1328;color:#eaf2ff;font-size:1rem;margin-bottom:.7rem"/>
+      <button onclick="guardarResultadoSupabase()" class="btn primary" style="width:100%">💾 Guardar Resultado</button>
+    </div>
+
+    <div id="mensajeGuardado" style="display:none;margin-top:1rem;padding:.8rem;background:#10b981;color:#fff;border-radius:8px;text-align:center;font-weight:700"></div>
+
+    <div class="actions" style="margin-top:1rem">
+      <button class="btn primary" type="button" id="restartBtn">Reiniciar módulo</button>
+      <a class="btn secondary" href="empleados.html">Volver a Empleados</a>
+    </div>
+  </section>
+</main>
+
+<script>
+  function shuffle(a){ const r=a.slice(); for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];} return r; }
+
+  const questions = [
+    {
+      title:"Impacto en la familia",
+      subtitle:"¿Qué impacto tiene un accidente grave en un trabajo con andamiaje en la vida de los trabajadores y sus familias?",
+      options:[
+        {text:"Solo afecta al trabajador, sin implicaciones para su familia", feedbackIncorrect:"El impacto suele extenderse al núcleo familiar en lo emocional y económico."},
+        {text:"Afecta gravemente al trabajador, y puede generar un gran estrés emocional y económico en su familia", correct:true, feedbackCorrect:"Así es. Las consecuencias tocan salud, ingresos y bienestar familiar."},
+        {text:"Afecta solo a la empresa, no a las familias de los trabajadores", feedbackIncorrect:"La empresa se afecta, pero la familia también enfrenta consecuencias serias."},
+        {text:"Solo genera un pequeño impacto económico en la familia del trabajador", feedbackIncorrect:"Los efectos a largo plazo suelen ser significativos."}
+      ],
+      media:{ok:"andamiop1x1.mp4", bad:"andamiop1x1.mp4"}
+    },
+    {
+      title:"Medida prioritaria",
+      subtitle:"¿Qué medida de seguridad debería ser prioritaria para proteger la vida de los trabajadores en trabajos de andamiaje?",
+      options:[
+        {text:"El uso de arneses y cascos de seguridad adecuados", correct:true, feedbackCorrect:"Fundamental para mitigar caídas y golpes."},
+        {text:"Supervisión constante para asegurarse de que todos sigan los procedimientos de seguridad", feedbackIncorrect:"Sin EPP crítico, la supervisión no basta."},
+        {text:"Uso exclusivo de andamios nuevos sin importar el tipo de trabajo", feedbackIncorrect:"Lo clave es instalación correcta y medidas complementarias."},
+        {text:"Formación solo al inicio, sin capacitaciones continuas", feedbackIncorrect:"La formación debe ser continua."}
+      ],
+      media:{ok:"andamiop1x2.mp4", bad:"andamiop1x3.mp4"}
+    },
+    {
+      title:"Antes de empezar",
+      subtitle:"¿Qué deben considerar los trabajadores antes de realizar un trabajo en altura con andamios?",
+      options:[
+        {text:"Solo el objetivo del trabajo y el tiempo estimado", feedbackIncorrect:"La seguridad es la prioridad."},
+        {text:"Verificar que los EPP estén en buen estado antes de comenzar", correct:true, feedbackCorrect:"Correcto. Revisar arnés, casco, calzado, etc."},
+        {text:"No verificar equipos si son experimentados", feedbackIncorrect:"La experiencia no reemplaza las verificaciones."},
+        {text:"Solo seguir instrucciones del supervisor", feedbackIncorrect:"La seguridad requiere acción personal informada."}
+      ],
+      media:{ok:"andamiop1x4.mp4", bad:"andamiop1x5.mp4"}
+    },
+    {
+      title:"Rol del supervisor",
+      subtitle:"¿Cómo debería un supervisor garantizar la seguridad de los trabajadores en un andamiaje?",
+      options:[
+        {text:"Solo comprobar uso de cascos y arneses", feedbackIncorrect:"También debe haber supervisión de procedimientos y formación."},
+        {text:"Supervisar procedimientos y ofrecer formación continua", correct:true, feedbackCorrect:"Exacto. Liderazgo y entrenamiento permanente."},
+        {text:"Dejar que cada trabajador se encargue de su seguridad", feedbackIncorrect:"La seguridad es responsabilidad compartida."},
+        {text:"Solo verificar la calidad de materiales", feedbackIncorrect:"Comportamientos y preparación importan también."}
+      ],
+      media:{ok:"andamiop1x6.mp4", bad:"andamiop1x7.mp4"}
+    },
+    {
+      title:"Moral del equipo",
+      subtitle:"¿Qué impacto tendría un accidente grave en la moral del equipo?",
+      options:[
+        {text:"Mejoraría la moral por mayor conciencia", feedbackIncorrect:"Normalmente genera ansiedad y preocupación."},
+        {text:"Reduciría la moral por la preocupación por el compañero", correct:true, feedbackCorrect:"Sí, suele bajar la motivación y la sensación de seguridad."},
+        {text:"No tendría impacto", feedbackIncorrect:"Los accidentes graves impactan fuerte al equipo."},
+        {text:"Solo afecta a la persona involucrada", feedbackIncorrect:"Todo el equipo se ve afectado."}
+      ],
+      media:{ok:"andamiop1x8.mp4", bad:"andamiop1x9.mp4"}
+    },
+    {
+      title:"Responsabilidad personal",
+      subtitle:"¿Cómo puede un trabajador mostrar su responsabilidad por su seguridad y la de sus compañeros?",
+      options:[
+        {text:"Cumplir normas solo cuando es supervisado", feedbackIncorrect:"Debe ser proactivo siempre."},
+        {text:"Tomar acciones para garantizar la seguridad propia y de compañeros", correct:true, feedbackCorrect:"Eso es cultura de seguridad."},
+        {text:"No preocuparse si otros están preparados", feedbackIncorrect:"La seguridad es colectiva."},
+        {text:"Dejar todo al supervisor", feedbackIncorrect:"Cada uno es parte activa."}
+      ],
+      media:{ok:"andamiop1x10.mp4", bad:"andamiop1x11.mp4"}
+    },
+    {
+      title:"EPP defectuoso",
+      subtitle:"¿Qué hacer si el EPP está defectuoso durante el trabajo?",
+      options:[
+        {text:"Ignorarlo si ya falta poco", feedbackIncorrect:"Nunca ignores un defecto."},
+        {text:"Seguir trabajando igual", feedbackIncorrect:"Riesgo alto de accidente."},
+        {text:"Informar y detenerse hasta reemplazo", correct:true, feedbackCorrect:"Siempre prioriza la seguridad."},
+        {text:"Usarlo solo en tareas menos riesgosas", feedbackIncorrect:"Equipo defectuoso no se usa."}
+      ],
+      media:{ok:"andamiop1x12.mp4", bad:"andamiop1x13.mp4"}
+    },
+    {
+      title:"Reputación de la empresa",
+      subtitle:"¿Qué efecto tendría la falta de seguridad en la reputación de la empresa?",
+      options:[
+        {text:"Sin impacto significativo", feedbackIncorrect:"Puede tener efectos graves y duraderos."},
+        {text:"Impacto negativo a largo plazo", correct:true, feedbackCorrect:"Puede perder contratos y confianza."},
+        {text:"No hay daño si hay compensación", feedbackIncorrect:"El daño reputacional persiste."},
+        {text:"Beneficio por atención mediática", feedbackIncorrect:"La exposición suele ser negativa."}
+      ],
+      media:{ok:"andamiop1x14.mp4", bad:"andamiop1x15.mp4"}
+    },
+    {
+      title:"Función del arnés con línea de vida",
+      subtitle:"¿Cuál es la principal función de un arnés de seguridad con línea de vida en trabajos de altura?",
+      options:[
+        {text:"Proteger de caídas y limitar la distancia de caída", correct:true, feedbackCorrect:"Exacto: prevenir caídas y/o detenerlas a tiempo."},
+        {text:"Evitar contacto con materiales peligrosos", feedbackIncorrect:"No es su función principal."},
+        {text:"Ayudar a mantener el equilibrio", feedbackIncorrect:"No está diseñado para eso."},
+        {text:"Mejorar visibilidad en áreas oscuras", feedbackIncorrect:"No mejora visibilidad."}
+      ],
+      media:{ok:"andamiop1x16.mp4", bad:"andamiop1x17.mp4"}
+    },
+    {
+      title:"Casco con barboquejo",
+      subtitle:"¿Por qué es importante el uso del casco con barboquejo?",
+      options:[
+        {text:"Para mejorar la visibilidad", feedbackIncorrect:"La función es proteger la cabeza."},
+        {text:"Para que el casco se mantenga firme ante movimientos o caídas", correct:true, feedbackCorrect:"El barboquejo evita que se desprenda."},
+        {text:"Para mantener la cabeza fresca", feedbackIncorrect:"No es su objetivo."},
+        {text:"Para facilitar el trabajo en espacios reducidos", feedbackIncorrect:"No es su propósito."}
+      ],
+      media:{ok:"andamiop1x18.mp4", bad:"andamiop1x19.mp4"}
+    },
+    {
+      title:"Guantes de protección",
+      subtitle:"¿Cuál es el propósito principal de usar guantes de protección?",
+      options:[
+        {text:"Proteger de cortes, abrasiones y químicos", correct:true, feedbackCorrect:"Esa es su función esencial."},
+        {text:"Mejorar agarre", feedbackIncorrect:"Puede ayudar, pero no es lo principal."},
+        {text:"Mantener manos calientes", feedbackIncorrect:"No es su diseño principal."},
+        {text:"Evitar que se ensucien", feedbackIncorrect:"La seguridad es lo central."}
+      ],
+      media:{ok:"andamiop1x20.mp4", bad:"andamiop1x21.mp4"}
+    },
+    {
+      title:"Calzado de seguridad",
+      subtitle:"¿Qué características debe tener el calzado de seguridad con puntera y suela antideslizante?",
+      options:[
+        {text:"Ser cómodo y ligero, sin protección", feedbackIncorrect:"Debe proteger, no solo ser cómodo."},
+        {text:"Proteger de golpes y evitar resbalones", correct:true, feedbackCorrect:"Eso reduce lesiones y caídas."},
+        {text:"Solo resistente a la humedad", feedbackIncorrect:"Debe ofrecer más protección."},
+        {text:"Material sintético para no desgastarse", feedbackIncorrect:"Lo importante es la protección efectiva."}
+      ],
+      media:{ok:"andamiop1x22.mp4", bad:"andamiop1x23.mp4"}
+    },
+    {
+      title:"Arnés dañado",
+      subtitle:"¿Qué hacer si el arnés con línea de vida está dañado antes de empezar?",
+      options:[
+        {text:"Continuar, es daño pequeño", feedbackIncorrect:"Nunca uses un arnés dañado."},
+        {text:"Informar y esperar reemplazo", correct:true, feedbackCorrect:"Correcto. Hasta entonces, no iniciar."},
+        {text:"Usarlo igual", feedbackIncorrect:"Inaceptable por riesgo crítico."},
+        {text:"Repararlo temporalmente", feedbackIncorrect:"Debe reemplazarse por uno certificado."}
+      ],
+      media:{ok:"andamiop1x24.mp4", bad:"andamiop1x25.mp4"}
+    },
+    {
+      title:"Ventaja de guantes",
+      subtitle:"¿Cuál es la ventaja de usar guantes donde hay riesgo de corte o abrasión?",
+      options:[
+        {text:"Evitar que se mojen", feedbackIncorrect:"No es el objetivo."},
+        {text:"Dar comodidad en tareas largas", feedbackIncorrect:"La protección es lo central."},
+        {text:"Proteger contra cortes y materiales peligrosos", correct:true, feedbackCorrect:"Exacto: reducen lesiones de mano."},
+        {text:"Mejorar la estética del EPP", feedbackIncorrect:"No es un accesorio estético."}
+      ],
+      media:{ok:"andamiop1x26.mp4", bad:"andamiop1x27.mp4"}
+    },
+    {
+      title:"Corrección del barboquejo",
+      subtitle:"¿Qué acción debe tomar el supervisor si alguien no usa el barboquejo correctamente?",
+      options:[
+        {text:"Ignorar si parece estar bien", feedbackIncorrect:"Debe corregirse de inmediato."},
+        {text:"Recordar su importancia y pedir ajuste correcto", correct:true, feedbackCorrect:"La intervención oportuna evita lesiones."},
+        {text:"Decidir que no es necesario", feedbackIncorrect:"Siempre se cumple normativa."},
+        {text:"Permitir seguir sin barboquejo", feedbackIncorrect:"El casco puede salir despedido."}
+      ],
+      media:{ok:"andamiop1x28.mp4", bad:"andamiop1x29.mp4"}
+    },
+    {
+      title:"Acción ante accidente de caída desde altura",
+      subtitle:"¿Cuál es la primera acción que debe tomar un obrero al presenciar un accidente de caída desde altura?",
+      options:[
+        {text:"Llamar inmediatamente a los servicios de emergencia.", correct:true, feedbackCorrect:"La primera acción debe ser alertar a los profesionales para una atención rápida y segura."},
+        {text:"Intentar mover a la persona herida sin esperar ayuda.", feedbackIncorrect:"Esto puede agravar lesiones, especialmente de columna o fracturas."},
+        {text:"Ignorar la situación y continuar trabajando.", feedbackIncorrect:"No intervenir pone en riesgo al afectado y al resto del equipo."},
+        {text:"Evacuar rápidamente el área para evitar más accidentes.", feedbackIncorrect:"Primero hay que activar el protocolo de emergencias antes de evacuar."}
+      ],
+      media:{ok:"andamiop1x30.mp4", bad:"andamiop1x31.mp4"}
+    },
+    {
+      title:"Acción incorrecta tras una caída",
+      subtitle:"¿Qué acción es incorrecta cuando un obrero observa a un compañero que ha caído desde una altura?",
+      options:[
+        {text:"Evaluar la situación sin mover al herido y esperar ayuda profesional.", feedbackIncorrect:"Es correcto no mover al herido y esperar ayuda adecuada si no hay peligro inmediato."},
+        {text:"Comenzar a administrar primeros auxilios sin formación adecuada.", correct:true, feedbackCorrect:"Es un error ayudar sin capacitación porque puede agravar lesiones graves."},
+        {text:"Mantener la calma y dirigir a los demás trabajadores para crear un espacio seguro.", feedbackIncorrect:"Fundamental para evitar nuevos riesgos y coordinar la ayuda."},
+        {text:"Usar equipo de protección personal adecuado antes de acercarse al herido.", feedbackIncorrect:"Siempre se debe usar EPP para auto-protección y evitar contaminaciones."}
+      ],
+      media:{ok:"andamiop1x32.mp4", bad:"andamiop1x33.mp4"}
+    },
+    {
+      title:"Valor personal y seguridad en altura",
+      subtitle:"¿Por qué es fundamental que un trabajador valore su vida mientras realiza tareas en alturas considerables?",
+      options:[
+        {text:"Porque su vida solo le pertenece a él", feedbackIncorrect:"La seguridad del trabajador también afecta a quienes lo rodean."},
+        {text:"Porque su seguridad también afecta la vida de sus seres queridos y su futuro", correct:true, feedbackCorrect:"Protegerse significa cuidar también a familia y entorno."},
+        {text:"Porque su trabajo no tiene importancia si no valora su vida", feedbackIncorrect:"La seguridad pone en valor el trabajo y la vida de todos."},
+        {text:"Porque el riesgo solo lo afecta a él, no a los demás", feedbackIncorrect:"Un accidente impacta a muchas personas, no solo al trabajador."}
+      ],
+      media:{ok:"andamiop1x34.mp4", bad:"andamiop1x35.mp4"}
+    },
+    {
+      title:"Valorar la vida en estructuras metálicas",
+      subtitle:"¿Cómo puede un trabajador asegurarse de que está valorando su vida mientras trabaja en estructuras metálicas?",
+      options:[
+        {text:"Solo cuidándose a sí mismo sin preocuparse por el equipo de seguridad", feedbackIncorrect:"El uso de EPP y cumplir los protocolos es esencial, no solo protegerse individualmente."},
+        {text:"Usando todo el equipo de protección personal (EPP) necesario y siguiendo los protocolos de seguridad", correct:true, feedbackCorrect:"Usar EPP y seguir procedimientos demuestra valoración de la propia vida."},
+        {text:"Trabajando lo más rápido posible para terminar antes", feedbackIncorrect:"La prioridad debe ser la seguridad, no la velocidad."},
+        {text:"Ignorando los riesgos si tiene experiencia en el trabajo", feedbackIncorrect:"La experiencia no elimina los riesgos."}
+      ],
+      media:{ok:"andamiop1x36.mp4", bad:"andamiop1x37.mp4"}
+    }
+  ];
+
+  let idx=0, score=0, skipped=0, wrong=0, answeredCurrent=false;
+  let shuffledOptions=[];
+
+  const el = {
+    qTitle: document.getElementById('qTitle'),
+    qSubtitle: document.getElementById('qSubtitle'),
+    form: document.getElementById('optForm'),
+    next: document.getElementById('nextBtn'),
+    skip: document.getElementById('skipBtn'),
+    feedback: document.getElementById('feedback'),
+    video: document.getElementById('qVideo'),
+    qCounter: document.getElementById('qCounter'),
+    scorePill: document.getElementById('scorePill'),
+    skipsPill: document.getElementById('skipsPill'),
+    progress: document.getElementById('progressFill'),
+    results: document.getElementById('results'),
+    qCard: document.getElementById('qCard'),
+    mCorrect: document.getElementById('mCorrect'),
+    mWrong: document.getElementById('mWrong'),
+    mSkipped: document.getElementById('mSkipped'),
+    mPercent: document.getElementById('mPercent'),
+    mHint: document.getElementById('mHint'),
+    restart: document.getElementById('restartBtn'),
+  };
+
+  function renderQuestion(){
+    const q=questions[idx];
+    answeredCurrent=false;
+    el.video.pause(); el.video.currentTime=0; el.video.style.display='none';
+    el.feedback.style.display='none'; el.feedback.textContent=''; el.feedback.className='feedback';
+    el.qTitle.textContent=q.title;
+    el.qSubtitle.textContent=q.subtitle||'';
+    shuffledOptions = shuffle(q.options).map((o,i)=>({...o,_i:i}));
+    el.form.innerHTML='';
+    shuffledOptions.forEach((opt,i)=>{
+      const lab=document.createElement('label');
+      lab.className='opt';
+      lab.innerHTML = `<input type="radio" name="opt" value="${i}"><div><strong>${String.fromCharCode(65+i)})</strong> ${opt.text}</div>`;
+      el.form.appendChild(lab);
+    });
+    el.qCounter.textContent=`Pregunta ${idx+1}/${questions.length}`;
+    el.progress.style.width=(idx/questions.length)*100 + '%';
+    el.next.textContent='Siguiente';
+    el.next.disabled=false;
+  }
+
+  function checkAndShow(){
+    const sel = el.form.querySelector('input[type="radio"]:checked');
+    if(!sel){ alert('Selecciona una opción o usa "Saltar".'); return false; }
+    const choice = parseInt(sel.value,10);
+    const chosen = shuffledOptions[choice];
+    const isCorrect = !!chosen.correct;
+    answeredCurrent = true;
+    if(isCorrect){
+      score++;
+      el.feedback.classList.add('ok');
+      el.feedback.textContent = chosen.feedbackCorrect || '¡Correcto!';
+      el.video.src = questions[idx].media.ok;
+    }else{
+      wrong++;
+      el.feedback.classList.add('bad');
+      el.feedback.textContent = chosen.feedbackIncorrect || 'Respuesta incorrecta.';
+      el.video.src = questions[idx].media.bad;
+    }
+    el.feedback.style.display='block';
+    el.video.style.display='block';
+    el.video.play().catch(()=>{});
+    el.form.querySelectorAll('input').forEach(i=>i.disabled=true);
+    el.scorePill.textContent=`Puntaje: ${score}`;
+    el.next.textContent = (idx===questions.length-1) ? 'Finalizar' : 'Siguiente';
+    return true;
+  }
+
+  function skipQuestion(){ skipped++; el.skipsPill.textContent=`Saltadas: ${skipped}`; goNext(); }
+  function goNext(){ if(idx<questions.length-1){ idx++; renderQuestion(); } else { showResults(); } }
+
+  function showResults(){
+    el.progress.style.width='100%';
+    el.qCard.style.display='none';
+    el.results.style.display='block';
+    const total=questions.length, percent=Math.round((score/total)*100);
+    el.mCorrect.textContent=score;
+    el.mWrong.textContent=wrong;
+    el.mSkipped.textContent=skipped;
+    el.mPercent.textContent=percent+'%';
+    let hint='Nivel de capacitación: ';
+    if(percent>=90) hint+='Excelente ✅';
+    else if(percent>=75) hint+='Adecuado 👍';
+    else if(percent>=60) hint+='Básico ⚠️';
+    else hint+='Insuficiente ❌';
+    el.mHint.textContent=hint;
+  }
+
+  el.next.addEventListener('click', ()=>{ if(!answeredCurrent){ if(!checkAndShow()) return; } else { goNext(); } });
+  el.skip.addEventListener('click', skipQuestion);
+  el.restart.addEventListener('click', ()=>{ 
+    idx=0;score=0;skipped=0;wrong=0; 
+    el.qCard.style.display='block'; 
+    el.results.style.display='none'; 
+    el.scorePill.textContent='Puntaje: 0'; 
+    el.skipsPill.textContent='Saltadas: 0'; 
+    resetearFormularioNombre();
+    renderQuestion(); 
+  });
+
+  renderQuestion();
+</script>
+
+<!-- INTEGRACIÓN SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://cjwocxsfcqllhzhlasuf.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqd29jeHNmY3FsbGh6aGxhc3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyOTg1MDcsImV4cCI6MjA3Nzg3NDUwN30.B7HYB7nv7cE5sAfRjRTJSGYnRx18cubfroNyet1mt_A';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  function obtenerNombreModulo() {
+    const titulo = document.title.toLowerCase();
+    if (titulo.includes('andamios')) return 'Andamios';
+    if (titulo.includes('cubiertas') || titulo.includes('techos')) return 'Cubiertas y Techos';
+    if (titulo.includes('empleadores')) return 'Empleadores';
+    if (titulo.includes('escaleras')) return 'Escaleras';
+    if (titulo.includes('estructuras') || titulo.includes('encofrados')) return 'Estructuras y Encofrados';
+    if (titulo.includes('supervisores')) return 'Supervisores';
+    return document.title;
+  }
+
+  async function guardarResultadoSupabase() {
+    const nombre = document.getElementById('nombreUsuario').value.trim();
+    if (!nombre) {
+      alert('⚠️ Por favor ingresa tu nombre para guardar el resultado');
+      return;
+    }
+
+    const btnGuardar = event.target;
+    const textoOriginal = btnGuardar.textContent;
+    btnGuardar.textContent = '⏳ Guardando...';
+    btnGuardar.disabled = true;
+
+    const modulo = obtenerNombreModulo();
+    const correcto = parseInt(document.getElementById('mCorrect').textContent, 10);
+    const incorrecto = parseInt(document.getElementById('mWrong').textContent, 10);
+    const saltado = parseInt(document.getElementById('mSkipped').textContent, 10);
+    const porcentaje = parseInt(document.getElementById('mPercent').textContent, 10);
+    const puntaje = correcto * 100;
+
+    console.log('Guardando:', { nombre, modulo, puntaje, correcto, incorrecto, saltado, porcentaje });
+
+    const { data, error } = await supabase
+      .from('resultados_test')
+      .insert([{
+        nombre: nombre,
+        modulo: modulo,
+        puntaje: puntaje,
+        correcto: correcto,
+        incorrecto: incorrecto,
+        saltado: saltado,
+        porcentaje: porcentaje
+      }]);
+
+    if (error) {
+      console.error('Error:', error);
+      alert('❌ Error al guardar: ' + error.message);
+      btnGuardar.textContent = textoOriginal;
+      btnGuardar.disabled = false;
+    } else {
+      document.getElementById('mensajeGuardado').style.display = 'block';
+      document.getElementById('mensajeGuardado').textContent = '✅ ¡Resultado guardado correctamente! Puedes reiniciar para intentar de nuevo.';
+      document.getElementById('formNombre').style.display = 'none';
+    }
+  }
+
+  function resetearFormularioNombre() {
+    document.getElementById('formNombre').style.display = 'block';
+    document.getElementById('mensajeGuardado').style.display = 'none';
+    document.getElementById('nombreUsuario').value = '';
+  }
+</script>
+</body>
+</html>

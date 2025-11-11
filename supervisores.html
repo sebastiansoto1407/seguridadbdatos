@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Supervisores — Simulador</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0f1a; --panel:#0f1726; --card:#121c2f; --muted:#9fb0c3; --text:#eaf2ff;
+    --stroke:#22324b; --brand1:#2dd4bf; --brand2:#3b82f6; --ok:#22c55e; --bad:#ef4444; --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(59,130,246,.18), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(45,212,191,.15), transparent 55%),
+    var(--bg); color:var(--text); line-height:1.6}
+  .wrap{max-width:1100px;margin:0 auto;padding:1rem 1.25rem 2rem}
+  header{position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);
+    background:linear-gradient(180deg, rgba(6,10,18,.75), rgba(6,10,18,.3));
+    border-bottom:1px solid rgba(147,197,253,.12)}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:1rem;
+    background:linear-gradient(180deg, rgba(18,28,47,.7), rgba(18,28,47,.3));
+    border:1px solid var(--stroke); padding:.9rem 1rem; border-radius:14px}
+  .progressbar{width:100%;height:8px;background:#0c1526;border-radius:999px;overflow:hidden}
+  .progressbar>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand1),var(--brand2))}
+  .hud{display:flex;gap:1rem;color:#cfe2ff}
+  .pill{background:#10213a;border:1px solid #2a4269;border-radius:999px;padding:.2rem .6rem;font-size:.85rem}
+  .card{margin-top:1rem;background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:1.1rem; box-shadow:0 10px 24px rgba(0,0,0,.25)}
+  .title{margin:.2rem 0 .1rem;font-size:clamp(1.2rem,2.6vw,1.6rem);font-weight:800}
+  .subtitle{margin:0 0 .8rem;color:var(--muted)}
+  .options{display:grid;gap:.6rem}
+  .opt{display:flex;gap:.6rem;align-items:flex-start;padding:.7rem .8rem;background:#0e1a2c;border:1px solid #20324f;border-radius:12px;cursor:pointer}
+  .opt:hover{border-color:#3a5e90;background:#10233e}
+  .opt input{margin-top:.1rem}
+  .actions{display:flex;gap:.6rem;margin-top:1rem;flex-wrap:wrap}
+  .btn{border:none;border-radius:12px;padding:.6rem .95rem;cursor:pointer;font-weight:800}
+  .btn.primary{background:linear-gradient(90deg,var(--brand1),var(--brand2));color:#081018}
+  .btn.secondary{background:#12233e;color:#cae0ff;border:1px solid #2a4269}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .feedback{margin-top:.9rem;border-left:4px solid #2a4269;background:#0f1c30;border-radius:10px;padding:.65rem .8rem;display:none}
+  .feedback.ok{border-left-color:var(--ok)} .feedback.bad{border-left-color:var(--bad)}
+  video{display:none;width:100%;max-height:360px;border-radius:12px;margin-top:.6rem;background:#000}
+  .media-wrap{display:none;margin-top:.6rem;background:#050b14;border:1px solid #1f2d45;border-radius:12px;padding:.5rem}
+  .media-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.4rem;color:#a9c2e8;font-size:.9rem}
+  .media-actions{display:flex;gap:.5rem}
+  .btn.ghost{background:transparent;border:1px solid #2a4269;color:#cfe2ff;padding:.3rem .6rem;border-radius:10px;font-weight:700}
+  #qImage{display:none;width:100%;height:auto;max-height:60vh;object-fit:contain;border-radius:10px;background:#000}
+  #imgModal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9999;padding:2rem}
+  #imgModal img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+  #imgModal .close{position:absolute;top:16px;right:16px;background:#0f1c30;border:1px solid #2a4269;color:#eaf2ff;padding:.45rem .7rem;border-radius:10px;font-weight:800;cursor:pointer}
+  .results{display:none;margin-top:1rem;background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:1.1rem}
+  .results h2{margin:.2rem 0 .6rem;font-size:1.4rem}
+  .grid2{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .metric{background:#0e1a2c;border:1px solid #20324f;border-radius:12px;padding:.8rem}
+  .metric .big{font-size:1.6rem;font-weight:800}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div style="display:flex;gap:.6rem;align-items:center;color:#cfe2ff">
+          <strong id="qCounter">Pregunta 1/20</strong>
+          <span class="pill" id="scorePill">Puntaje: 0</span>
+          <span class="pill" id="skipsPill">Saltadas: 0</span>
+        </div>
+        <div class="progressbar" aria-label="Progreso"><span id="progressFill"></span></div>
+      </div>
+      <div class="hud"><span class="pill">Módulo: Supervisores</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" id="qCard" aria-live="polite">
+    <h2 class="title" id="qTitle">Título</h2>
+    <p class="subtitle" id="qSubtitle">Enunciado</p>
+    <form class="options" id="optForm"></form>
+    <div class="actions">
+      <button class="btn secondary" id="skipBtn" type="button">Saltar</button>
+      <button class="btn primary" id="nextBtn" type="button">Siguiente</button>
+    </div>
+    <div id="feedback" class="feedback"></div>
+    <video id="qVideo" controls preload="metadata"></video>
+    <div class="media-wrap" id="imgWrap" aria-live="polite">
+      <div class="media-head">
+        <span id="imgCaption">Imagen de retroalimentación</span>
+        <div class="media-actions">
+          <button class="btn ghost" type="button" id="openFullBtn">Ver completa</button>
+          <a class="btn ghost" id="downloadImg" href="#" download>Descargar</a>
+        </div>
+      </div>
+      <img id="qImage" alt="Media feedback">
+    </div>
+    <div id="qIframeWrap" style="display:none;margin-top:.6rem"></div>
+    <div id="qMediaCreditGlobal" style="display:none;color:var(--muted);margin-top:.5rem;font-size:.9rem"></div>
+  </section>
+
+  <section class="results" id="results">
+    <h2>Resultados del módulo</h2>
+    <div class="grid2">
+      <div class="metric"><div>Respuestas correctas</div><div class="big" id="mCorrect">0</div></div>
+      <div class="metric"><div>Respuestas incorrectas</div><div class="big" id="mWrong">0</div></div>
+      <div class="metric"><div>Preguntas saltadas</div><div class="big" id="mSkipped">0</div></div>
+      <div class="metric"><div>% de capacitación</div><div class="big" id="mPercent">0%</div></div>
+    </div>
+    <p style="color:var(--muted);margin-top:.8rem" id="mHint"></p>
+
+    <!-- FORMULARIO PARA GUARDAR NOMBRE -->
+    <div id="formNombre" style="margin-top:1.5rem;padding:1rem;background:#0e1a2c;border:1px solid #20324f;border-radius:12px;">
+      <label for="nombreUsuario" style="display:block;margin-bottom:.5rem;font-weight:600;color:#eaf2ff;">
+        💾 Ingresa tu nombre para guardar tu resultado:
+      </label>
+      <input 
+        type="text" 
+        id="nombreUsuario" 
+        placeholder="Tu nombre completo"
+        maxlength="100"
+        style="width:100%;padding:.6rem;border-radius:8px;border:1px solid #2a4269;background:#0b1328;color:#eaf2ff;font-size:1rem;margin-bottom:.7rem;"
+      />
+      <button 
+        onclick="guardarResultadoSupabase()" 
+        class="btn primary"
+        style="width:100%;"
+      >
+        💾 Guardar Resultado
+      </button>
+    </div>
+
+    <!-- MENSAJE DE CONFIRMACIÓN -->
+    <div id="mensajeGuardado" style="display:none;margin-top:1rem;padding:.8rem;background:#10b981;color:#fff;border-radius:8px;text-align:center;font-weight:700;"></div>
+
+    <div class="actions" style="margin-top:1rem">
+      <button class="btn primary" type="button" id="restartBtn">Reiniciar módulo</button>
+      <a class="btn secondary" href="empleados.html">Volver a Empleados</a>
+    </div>
+  </section>
+</main>
+
+<div id="imgModal" role="dialog" aria-modal="true">
+  <button class="close" id="closeModal" type="button">Cerrar ×</button>
+  <img id="modalImg" alt="Imagen completa">
+</div>
+
+<script>
+  function shuffle(a){ const r=a.slice(); for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];} return r; }
+
+  const questions = [
+    {
+      title:"Impacto personal por accidente bajo tu supervisión",
+      subtitle:"Si un trabajador bajo tu supervisión sufre un accidente grave debido a la falta de medidas de seguridad adecuadas, ¿qué impacto tendría esto en tu vida personal?",
+      options:[
+        {text:"No afectaría mi vida personal.", feedbackIncorrect:"Ignorar la carga emocional niega consecuencias psicológicas reales."},
+        {text:"Podría causarme una gran carga emocional, ya que sentiría que no protegí a la persona a mi cargo.", correct:true, feedbackCorrect:"La responsabilidad pesa y suele generar una carga emocional significativa."},
+        {text:"Solo afectaría mi vida profesional, no personal.", feedbackIncorrect:"También impacta el bienestar emocional y familiar."},
+        {text:"No me afectaría emocionalmente, ya que todo es parte del trabajo.", feedbackIncorrect:"Esa desvinculación suele afectar la vida personal a largo plazo."}
+      ],
+      media:{ok:"supervisor2.mp4", bad:"supervisor2.mp4"}
+    },
+    {
+      title:"Consecuencias económicas para el supervisor",
+      subtitle:"¿Qué consecuencias económicas podría enfrentar un supervisor si, por su culpa, un trabajador sufre un accidente grave?",
+      options:[
+        {text:"No tendría consecuencias económicas directas para mí.", feedbackIncorrect:"Pueden existir sanciones o compensaciones."},
+        {text:"Podría enfrentar multas o compensaciones que afecten mi salario o beneficios.", correct:true, feedbackCorrect:"Según normativa interna/contractual, pueden aplicarse sanciones económicas."},
+        {text:"La empresa se encargaría de cubrir todos los gastos, no afectaría mis finanzas.", feedbackIncorrect:"También puede haber responsabilidades individuales."},
+        {text:"Mi salario podría aumentar por haber gestionado un accidente y por el riesgo que asumí.", feedbackIncorrect:"La responsabilidad no es un mérito económico."}
+      ],
+      media:{ok:"supervisor3.mp4", bad:"supervisor4.mp4"}
+    },
+    {
+      title:"Relación con la familia tras un accidente prevenible",
+      subtitle:"Si un accidente grave ocurre debido a la falta de medidas preventivas en el trabajo, ¿cómo afectaría esto tu relación con tu familia y seres cercanos?",
+      options:[
+        {text:"No cambiaría mi relación con mi familia.", feedbackIncorrect:"La tensión y la culpa suelen afectar el entorno familiar."},
+        {text:"Mi familia podría sentirse decepcionada de mi falta de acción para proteger a los demás.", correct:true, feedbackCorrect:"La culpa y el estrés pueden generar tensiones familiares."},
+        {text:"La relación con mi familia se fortalecería por superar juntos la tragedia.", feedbackIncorrect:"Al ser prevenible, puede generar más conflicto que unión."},
+        {text:"Mi familia no tendría nada que ver con lo ocurrido, ya que es parte de mi trabajo.", feedbackIncorrect:"También se ven afectados emocionalmente."}
+      ],
+      media:{ok:"image.png", bad:"supervisor6.mp4"}
+    },
+    {
+      title:"Repercusiones en tu carrera",
+      subtitle:"¿Qué repercusiones podría tener en tu futuro profesional y reputación como supervisor si un trabajador sufre un accidente bajo tu supervisión debido a la falta de protección adecuada?",
+      options:[
+        {text:"No tendría repercusiones, ya que los accidentes son parte del trabajo.", feedbackIncorrect:"La negligencia trae consecuencias formales."},
+        {text:"Podría perder mi puesto de supervisor o enfrentar sanciones que afecten mi carrera a largo plazo.", correct:true, feedbackCorrect:"Puede implicar pérdida de puesto y sanciones."},
+        {text:"La empresa me apoyaría, ya que no fue mi culpa directamente.", feedbackIncorrect:"La responsabilidad directa afecta reputación y carrera."},
+        {text:"Mi reputación no cambiaría, ya que los trabajadores siempre aceptan riesgos en su trabajo.", feedbackIncorrect:"La reputación se deteriora si no se exige protección."}
+      ],
+      media:{ok:"supervisor7.mp4", bad:"supervisor8.mp4"}
+    },
+    {
+      title:"Salud mental del supervisor",
+      subtitle:"Si un trabajador sufre una tragedia debido a tu negligencia, ¿cómo podría afectar esto tu salud mental a largo plazo?",
+      options:[
+        {text:"No me afectaría psicológicamente, ya que es parte de mi trabajo.", feedbackIncorrect:"Puede generar efectos emocionales relevantes."},
+        {text:"La culpa y el estrés por el accidente pueden generar problemas de ansiedad, depresión o trastornos postraumáticos.", correct:true, feedbackCorrect:"Riesgo real de ansiedad, depresión o TEPT."},
+        {text:"Mi salud mental no se vería afectada, ya que todo fue un accidente.", feedbackIncorrect:"La culpabilidad agrava el impacto psicológico."},
+        {text:"Solo me sentiría mal por un tiempo corto, pero luego seguiría adelante.", feedbackIncorrect:"Los efectos pueden durar mucho más tiempo."}
+      ],
+      media:{ok:"supervisor9.mp4", bad:"supervisor10.mp4"}
+    },
+    {
+      title:"Efecto en la familia",
+      subtitle:"¿Cómo afectaría a tu familia el estrés y la culpa derivados de un accidente grave ocurrido bajo tu supervisión?",
+      options:[
+        {text:"No afectaría a mi familia, ya que ellos saben que no fue mi culpa.", feedbackIncorrect:"El estrés inevitablemente repercute en la familia."},
+        {text:"El estrés y la culpa podrían generar tensiones familiares, afectando las relaciones cercanas y la dinámica familiar.", correct:true, feedbackCorrect:"Puede haber distanciamiento o conflictos."},
+        {text:"Solo me afectaría a mí, mi familia entendería que todo fue un accidente.", feedbackIncorrect:"La carga emocional suele compartirse."},
+        {text:"Mi familia me apoyaría, ya que la situación no es grave.", feedbackIncorrect:"La situación sí es grave y afecta la dinámica."}
+      ],
+      media:{ok:{type:'youtube', src:'https://www.youtube.com/watch?v=daNRoUoSRGo', credit:'Fuente: Entorno Cristiano'}, bad:"supervisor12.mp4"}
+    },
+    {
+      title:"No exigir EPP en altura",
+      subtitle:"¿Qué podría pasar si no exiges el uso de cascos, arneses y gafas en trabajos en altura?",
+      options:[
+        {text:"Nada, ya que los trabajadores pueden trabajar sin ellos si son experimentados.", feedbackIncorrect:"La experiencia no reemplaza el EPP."},
+        {text:"Aumenta el riesgo de accidentes graves que pueden generar daños físicos, problemas legales y costos adicionales.", correct:true, feedbackCorrect:"Aumentan lesiones, sanciones y costos."},
+        {text:"Los trabajadores pueden usar los equipos si sienten que los necesitan.", feedbackIncorrect:"Exigir su uso es responsabilidad del supervisor."},
+        {text:"No pasa nada, ya que no es obligatorio usar estos equipos en todo momento.", feedbackIncorrect:"El uso es obligatorio según normativa."}
+      ],
+      media:{ok:"supervisor13.mp4", bad:"supervisor14.mp4"}
+    },
+    {
+      title:"Impacto económico para la empresa",
+      subtitle:"¿Qué consecuencias económicas podría enfrentar la empresa si no se exigen cascos, arneses y gafas para trabajos en altura?",
+      options:[
+        {text:"Ninguna, los accidentes son poco frecuentes.", feedbackIncorrect:"La probabilidad y el impacto aumentan sin EPP."},
+        {text:"La empresa podría enfrentar multas significativas y aumentar los costos de seguros debido a la falta de cumplimiento de las normativas de seguridad.", correct:true, feedbackCorrect:"Sanciones y primas de seguro más altas."},
+        {text:"Solo tendría que pagar indemnizaciones si ocurre un accidente grave.", feedbackIncorrect:"Los costos abarcan sanciones, primas, paros, etc."},
+        {text:"La empresa podría pagar más en productos y materiales de calidad, pero no afectaría sus finanzas a largo plazo.", feedbackIncorrect:"El incumplimiento afecta la rentabilidad a largo plazo."}
+      ],
+      media:{ok:"supervisor15.mp4", bad:"supervisor16.mp4"}
+    },
+    {
+      title:"Por qué exigir EPP (rol del supervisor)",
+      subtitle:"¿Por qué es importante que como supervisor exijas el uso de cascos, arneses y gafas para trabajos en altura?",
+      options:[
+        {text:"Porque son requerimientos legales que ayudan a evitar sanciones y accidentes graves.", correct:true, feedbackCorrect:"Previene accidentes y asegura cumplimiento legal."},
+        {text:"Porque el equipo de protección solo es necesario si un trabajador lo pide.", feedbackIncorrect:"No depende de la voluntad del trabajador."},
+        {text:"Porque los equipos de protección son costosos y solo se deben usar en situaciones extremas.", feedbackIncorrect:"El costo de un accidente es mayor."},
+        {text:"Porque los trabajadores pueden realizar su trabajo sin estos equipos sin ningún problema.", feedbackIncorrect:"El riesgo sin EPP es inaceptable."}
+      ],
+      media:{ok:"supervisor17.mp4", bad:"supervisor18.mp4"}
+    },
+    {
+      title:"Efecto en la familia del trabajador",
+      subtitle:"¿Qué consecuencias podría tener la falta de exigencia de EPP (como cascos, arneses y gafas) en la vida personal y familiar de un trabajador si sufre un accidente?",
+      options:[
+        {text:"No tendría grandes consecuencias, ya que la familia recibiría apoyo económico del seguro.", feedbackIncorrect:"El seguro no cubre todo el impacto."},
+        {text:"La familia podría enfrentar dificultades económicas si el trabajador queda incapacitado, afectando su calidad de vida.", correct:true, feedbackCorrect:"Puede haber pérdidas de ingreso y estrés emocional."},
+        {text:"La familia no se vería afectada si el trabajador está asegurado.", feedbackIncorrect:"Los costos indirectos y emocionales persisten."},
+        {text:"No pasaría nada, ya que los accidentes no ocurren con frecuencia.", feedbackIncorrect:"La severidad hace crítico prevenir."}
+      ],
+      media:{ok:"supervisor19.mp4", bad:"supervisor20.mp4"}
+    },
+    {
+      title:"Moral y productividad",
+      subtitle:"¿Qué impacto podría tener el no exigir el uso de equipos de protección adecuados en la moral y productividad de los trabajadores?",
+      options:[
+        {text:"No tendría impacto en la moral ni en la productividad.", feedbackIncorrect:"La inseguridad reduce el rendimiento."},
+        {text:"Los trabajadores podrían sentirse inseguros y menos motivados, lo que afectaría negativamente su productividad.", correct:true, feedbackCorrect:"Baja moral → menor productividad y más errores."},
+        {text:"La moral de los trabajadores mejoraría al tener más libertad en su trabajo.", feedbackIncorrect:"La seguridad no es negociable."},
+        {text:"Los trabajadores estarían más motivados, ya que no tendrían que usar equipos incómodos.", feedbackIncorrect:"El confort no supera la seguridad."}
+      ],
+      media:{ok:"supervisor21.mp4", bad:"supervisor22.mp4"}
+    },
+    {
+      title:"Reputación del supervisor",
+      subtitle:"Si un trabajador sufre un accidente por no usar casco, arnés o gafas en trabajos en altura, ¿cómo afectaría esto tu reputación profesional como supervisor?",
+      options:[
+        {text:"No tendría impacto en mi reputación, ya que los accidentes ocurren.", feedbackIncorrect:"La omisión de medidas te afecta directamente."},
+        {text:"Mi reputación se vería gravemente afectada, ya que no cumplí con mi responsabilidad de garantizar la seguridad del equipo.", correct:true, feedbackCorrect:"Perderías confianza y credibilidad."},
+        {text:"Mi reputación no cambiaría, ya que el accidente fue inesperado.", feedbackIncorrect:"La falta de prevención no se justifica."},
+        {text:"Mi reputación podría mejorar, ya que manejé bien la situación después del accidente.", feedbackIncorrect:"Gestionar no compensa no prevenir."}
+      ],
+      media:{ok:{type:'youtube', src:'https://www.youtube.com/watch?v=oWZQQedjWQM', credit:'Fuente: Birdbox Studio'}, bad:"supervisor24.mp4"}
+    },
+    {
+      title:"Relaciones laborales",
+      subtitle:"¿Cómo afectaría la no exigencia de equipos de protección en trabajos en altura a las relaciones laborales con el equipo de trabajo?",
+      options:[
+        {text:"No afectaría las relaciones, ya que todos están acostumbrados a trabajar sin EPP.", feedbackIncorrect:"Genera desconfianza y resentimiento."},
+        {text:"La falta de exigencia puede generar resentimiento entre los trabajadores, que podrían sentir que no se les valora lo suficiente como para proporcionarles protección adecuada.", correct:true, feedbackCorrect:"Daña la cohesión y la percepción de cuidado."},
+        {text:"Los trabajadores se sentirían más comprometidos y motivados si no se les exige el uso de equipos de protección.", feedbackIncorrect:"El compromiso crece cuando se sienten protegidos."},
+        {text:"Los trabajadores no se preocuparían por la falta de protección, ya que están acostumbrados a asumir riesgos.", feedbackIncorrect:"La exposición constante afecta la actitud y seguridad."}
+      ],
+      media:{ok:"supervisor25.mp4", bad:"supervisor26.mp4"}
+    },
+    {
+      title:"EPP en mal estado — acción correcta",
+      subtitle:"¿Qué acciones debe tomar un supervisor si encuentra que los EPP (como casco, arnés o gafas) de un trabajador están en mal estado durante la inspección?",
+      options:[
+        {text:"Permitir que el trabajador continúe trabajando hasta que termine su turno.", feedbackIncorrect:"Aumenta el riesgo y la responsabilidad."},
+        {text:"Exigir al trabajador que utilice los EPP defectuosos de todos modos.", feedbackIncorrect:"Nunca se usa EPP defectuoso."},
+        {text:"Retirar inmediatamente los EPP defectuosos y reemplazarlos por unos nuevos o en buen estado antes de que el trabajador continúe trabajando.", correct:true, feedbackCorrect:"Acción inmediata y preventiva."},
+        {text:"Asegurarse de que el trabajador esté consciente del riesgo y permitir que el trabajo continúe sin tomar más acciones.", feedbackIncorrect:"Concientizar no sustituye controlar el riesgo."}
+      ],
+      media:{ok:"supervisor27.mp4", bad:"supervisor28.mp4"}
+    },
+    {
+      title:"Control y registro de EPP",
+      subtitle:"¿Por qué es importante llevar un registro y control regular del estado de los EPP en los trabajos en altura?",
+      options:[
+        {text:"No es importante, ya que los EPP no se desgastan rápidamente.", feedbackIncorrect:"Se degradan con uso y tiempo."},
+        {text:"Es esencial para garantizar que los EPP estén en condiciones adecuadas de seguridad y para cumplir con las normativas legales.", correct:true, feedbackCorrect:"Control preventivo + cumplimiento legal."},
+        {text:"Solo es necesario hacer el control cuando se detecta un problema.", feedbackIncorrect:"La prevención exige controles periódicos."},
+        {text:"No es necesario, ya que los EPP siempre funcionan correctamente si son nuevos.", feedbackIncorrect:"Aun nuevos requieren verificación continua."}
+      ],
+      media:{ok:"supervisor29.mp4", bad:"supervisor30.mp4"}
+    },
+    {
+      title:"EPP de mala calidad o dañado",
+      subtitle:"¿Qué consecuencias podría tener el uso de equipos de protección personal (EPP) de mala calidad o en mal estado durante trabajos en altura?",
+      options:[
+        {text:"Ninguna, ya que los EPP siempre funcionan correctamente sin importar su estado.", feedbackIncorrect:"El defecto compromete la protección."},
+        {text:"El riesgo de accidentes aumenta, lo que podría generar lesiones graves, multas y pérdidas económicas.", correct:true, feedbackCorrect:"Mayor siniestralidad y consecuencias económicas."},
+        {text:"Los EPP en mal estado no afectan la seguridad, ya que los trabajadores pueden adaptarse.", feedbackIncorrect:"La adaptación no elimina el riesgo."},
+        {text:"La calidad de los EPP no tiene impacto en la seguridad, ya que solo son necesarios en casos extremos.", feedbackIncorrect:"La calidad es clave siempre."}
+      ],
+      media:{ok:"supervisor31.mp4", bad:"supervisor32.mp4"}
+    },
+    {
+      title:"Inspección de cascos, arneses y gafas",
+      subtitle:"¿Cuáles son los aspectos clave que debes revisar al inspeccionar los cascos, arneses y gafas de protección para asegurar que estén en buen estado?",
+      options:[
+        {text:"Solo revisar que no estén sucios.", feedbackIncorrect:"La limpieza no basta para asegurar funcionalidad."},
+        {text:"Verificar que no tengan grietas, daños visibles, partes desgastadas o que falten componentes esenciales.", correct:true, feedbackCorrect:"Inspección visual y funcional completa."},
+        {text:"Revisar solo la fecha de caducidad, ya que eso es lo más importante.", feedbackIncorrect:"Fecha + inspección física son necesarias."},
+        {text:"Comprobar solo si los EPP se ven nuevos.", feedbackIncorrect:"Aspecto nuevo no garantiza integridad."}
+      ],
+      media:{ok:"supervisor33.mp4", bad:"supervisor34.mp4"}
+    },
+    {
+      title:"Acción ante accidente bajo supervisión",
+      subtitle:"¿Cuál es la primera acción que debe tomar un supervisor al presenciar un accidente de caída desde altura?",
+      options:[
+        {text:"Llamar inmediatamente a los servicios de emergencia.", correct:true, feedbackCorrect:"La pronta comunicación con los servicios de emergencia asegura atención especializada rápida y minimiza el riesgo de empeorar las lesiones."},
+        {text:"Intentar mover a la persona herida sin esperar ayuda.", feedbackIncorrect:"Mover al herido sin conocimientos es peligroso y puede agravar fracturas o lesiones en la columna."},
+        {text:"Ignorar la situación y continuar supervisando el trabajo.", feedbackIncorrect:"No intervenir es una omisión grave de responsabilidad y pone en riesgo al resto del equipo."},
+        {text:"Evacuar rápidamente el área para evitar más accidentes.", feedbackIncorrect:"Aunque la seguridad de la zona es importante, siempre se debe llamar primero a emergencias y evaluar el riesgo con calma."}
+      ],
+      media:{ok:"supervisor35.mp4", bad:"supervisor36.mp4"}
+    },
+    {
+      title:"Acción incorrecta tras una caída",
+      subtitle:"¿Qué acción es incorrecta cuando un supervisor observa que un trabajador ha caído desde una altura?",
+      options:[
+        {text:"Evaluar la situación sin mover al herido y esperar ayuda profesional.", feedbackIncorrect:"Esta es la mejor práctica: no moverlo y esperar equipo capacitado si no hay peligro inmediato."},
+        {text:"Comenzar a administrar primeros auxilios sin formación adecuada.", correct:true, feedbackCorrect:"Aunque es humano ayudar, si no tienes formación adecuada puedes empeorar las lesiones graves."},
+        {text:"Mantener la calma y dirigir a los demás trabajadores para crear un espacio seguro.", feedbackIncorrect:"Esto es clave para evitar el pánico y evitar más riesgos."},
+        {text:"Usar equipo de protección personal adecuado antes de acercarse al herido.", feedbackIncorrect:"Protegerse a sí mismo también es esencial en una emergencia."}
+      ],
+      media:{ok:"supervisor37.mp4", bad:"supervisor38.mp4"}
+    }
+  ];
+
+  let idx=0, score=0, skipped=0, wrong=0, answeredCurrent=false;
+  let shuffledOptions=[];
+
+  const el = {
+    qTitle: document.getElementById('qTitle'),
+    qSubtitle: document.getElementById('qSubtitle'),
+    form: document.getElementById('optForm'),
+    next: document.getElementById('nextBtn'),
+    skip: document.getElementById('skipBtn'),
+    feedback: document.getElementById('feedback'),
+    video: document.getElementById('qVideo'),
+    qCounter: document.getElementById('qCounter'),
+    scorePill: document.getElementById('scorePill'),
+    skipsPill: document.getElementById('skipsPill'),
+    progress: document.getElementById('progressFill'),
+    results: document.getElementById('results'),
+    qCard: document.getElementById('qCard'),
+    mCorrect: document.getElementById('mCorrect'),
+    mWrong: document.getElementById('mWrong'),
+    mSkipped: document.getElementById('mSkipped'),
+    mPercent: document.getElementById('mPercent'),
+    mHint: document.getElementById('mHint'),
+    restart: document.getElementById('restartBtn'),
+    imgWrap: document.getElementById('imgWrap'),
+    img: document.getElementById('qImage'),
+    imgCaption: document.getElementById('imgCaption'),
+    openFullBtn: document.getElementById('openFullBtn'),
+    downloadImg: document.getElementById('downloadImg'),
+    imgModal: document.getElementById('imgModal'),
+    modalImg: document.getElementById('modalImg'),
+    closeModal: document.getElementById('closeModal'),
+  };
+
+  function renderQuestion(){
+    const q=questions[idx];
+    answeredCurrent=false;
+    el.video.pause(); el.video.currentTime=0; el.video.style.display='none'; el.video.removeAttribute('src');
+    el.imgWrap.style.display='none'; el.img.style.display='none'; el.img.removeAttribute('src');
+    el.feedback.style.display='none'; el.feedback.textContent=''; el.feedback.className='feedback';
+    el.qTitle.textContent=q.title;
+    el.qSubtitle.textContent=q.subtitle||'';
+    shuffledOptions = shuffle(q.options).map((o,i)=>({...o,_i:i}));
+    el.form.innerHTML='';
+    shuffledOptions.forEach((opt,i)=>{
+      const lab=document.createElement('label');
+      lab.className='opt';
+      lab.innerHTML = `<input type="radio" name="opt" value="${i}"><div><strong>${String.fromCharCode(65+i)})</strong> ${opt.text}</div>`;
+      el.form.appendChild(lab);
+    });
+    el.qCounter.textContent=`Pregunta ${idx+1}/${questions.length}`;
+    el.progress.style.width=(idx/questions.length)*100 + '%';
+    el.next.textContent='Siguiente';
+    el.next.disabled=false;
+  }
+
+  function checkAndShow(){
+    const sel = el.form.querySelector('input[type="radio"]:checked');
+    if(!sel){ alert('Selecciona una opción o usa "Saltar".'); return false; }
+    const choice = parseInt(sel.value,10);
+    const chosen = shuffledOptions[choice];
+    const isCorrect = !!chosen.correct;
+    answeredCurrent = true;
+    if(isCorrect){
+      score++;
+      el.feedback.classList.add('ok');
+      el.feedback.textContent = chosen.feedbackCorrect || '¡Correcto!';
+      showMedia(questions[idx].media && questions[idx].media.ok, 'correcta');
+    }else{
+      wrong++;
+      el.feedback.classList.add('bad');
+      el.feedback.textContent = chosen.feedbackIncorrect || 'Respuesta incorrecta.';
+      showMedia(questions[idx].media && questions[idx].media.bad, 'incorrecta');
+    }
+    el.feedback.style.display='block';
+    el.form.querySelectorAll('input').forEach(i=>i.disabled=true);
+    el.scorePill.textContent=`Puntaje: ${score}`;
+    el.next.textContent = (idx===questions.length-1) ? 'Finalizar' : 'Siguiente';
+    return true;
+  }
+
+  function resolveMedia(m){
+    if(!m) return null;
+    if(typeof m === 'string'){
+      const ext = m.split('.').pop().toLowerCase();
+      const videoTypes = ['mp4','webm','ogg'];
+      const imageTypes = ['jpg','jpeg','png','gif','webp','bmp','svg'];
+      const type = videoTypes.includes(ext) ? 'video' : (imageTypes.includes(ext) ? 'image' : 'unknown');
+      return { type, src: m };
+    }
+    if(typeof m === 'object' && m.type && m.src) return m;
+    if(typeof m === 'object' && m.src && typeof m.src === 'string'){
+      const url = m.src;
+      const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+      if(ytMatch){ return { type:'youtube', src: url, credit: m.credit || '' }; }
+    }
+    return null;
+  }
+
+  function showMedia(mediaDescriptor, contextLabel=''){
+    const m = resolveMedia(mediaDescriptor);
+    el.video.pause(); el.video.currentTime = 0; el.video.style.display = 'none';
+    el.imgWrap.style.display='none'; el.img.style.display='none'; el.img.src='';
+    const iframeWrap = document.getElementById('qIframeWrap'); if(iframeWrap){ iframeWrap.style.display='none'; iframeWrap.innerHTML=''; }
+    const globalCredit = document.getElementById('qMediaCreditGlobal'); if(globalCredit){ globalCredit.style.display='none'; globalCredit.textContent=''; }
+    if(!m) return;
+    if(m.type === 'video'){
+      el.video.src = m.src;
+      el.video.style.display = 'block';
+      el.video.play().catch(()=>{});
+    }else if(m.type === 'youtube'){
+      const iframeWrapEl = document.getElementById('qIframeWrap');
+      const idMatch = m.src.match(/(?:v=|be\/)([A-Za-z0-9_-]{11})/);
+      const vidId = idMatch ? idMatch[1] : null;
+      if(iframeWrapEl && vidId){
+        iframeWrapEl.innerHTML = `<iframe width="100%" height="360" src="https://www.youtube.com/embed/${vidId}?rel=0" frameborder="0" allowfullscreen></iframe>`;
+        iframeWrapEl.style.display = 'block';
+        if(m.credit){ const gc = document.getElementById('qMediaCreditGlobal'); if(gc){ gc.textContent = m.credit; gc.style.display='block'; } }
+      }
+    }else{
+      el.img.src = m.src;
+      el.img.alt = `Imagen ${contextLabel}`;
+      el.imgWrap.style.display='block';
+      el.img.style.display='block';
+      el.downloadImg.href = m.src;
+      el.openFullBtn.onclick = openModalFull;
+      el.img.onclick = openModalFull;
+      if(m.credit){ const gc = document.getElementById('qMediaCreditGlobal'); if(gc){ gc.textContent = m.credit; gc.style.display='block'; } }
+    }
+  }
+
+  function openModalFull(){
+    el.modalImg.src = el.img.src;
+    el.imgModal.style.display = 'flex';
+  }
+  function closeModalFull(){
+    el.imgModal.style.display = 'none';
+    el.modalImg.removeAttribute('src');
+  }
+
+  function skipQuestion(){ skipped++; el.skipsPill.textContent=`Saltadas: ${skipped}`; goNext(); }
+  function goNext(){ if(idx<questions.length-1){ idx++; renderQuestion(); } else { showResults(); } }
+
+  function showResults(){
+    el.progress.style.width='100%';
+    el.qCard.style.display='none';
+    el.results.style.display='block';
+    const total=questions.length, percent=Math.round((score/total)*100);
+    el.mCorrect.textContent=score;
+    el.mWrong.textContent=wrong;
+    el.mSkipped.textContent=skipped;
+    el.mPercent.textContent=percent+'%';
+    let hint='Nivel de capacitación: ';
+    if(percent>=90) hint+='Excelente ✅';
+    else if(percent>=75) hint+='Adecuado 👍';
+    else if(percent>=60) hint+='Básico ⚠️';
+    else hint+='Insuficiente ❌';
+    el.mHint.textContent=hint;
+  }
+
+  el.next.addEventListener('click', ()=>{ if(!answeredCurrent){ if(!checkAndShow()) return; } else { goNext(); } });
+  el.skip.addEventListener('click', skipQuestion);
+  el.restart.addEventListener('click', ()=>{ 
+  idx=0;
+  score=0;
+  skipped=0;
+  wrong=0; 
+  el.qCard.style.display='block'; 
+  el.results.style.display='none'; 
+  el.scorePill.textContent='Puntaje: 0'; 
+  el.skipsPill.textContent='Saltadas: 0'; 
+  
+  // Resetear formulario de nombre para nuevo intento
+  resetearFormularioNombre();
+  
+  renderQuestion(); 
+});
+
+  el.closeModal.addEventListener('click', closeModalFull);
+  el.imgModal.addEventListener('click', (e)=>{ if(e.target===el.imgModal) closeModalFull(); });
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && el.imgModal.style.display==='flex') closeModalFull(); });
+
+  renderQuestion();
+</script>
+
+<!-- ==================== INTEGRACIÓN SUPABASE ==================== -->
+<!-- ==================== INTEGRACIÓN SUPABASE ==================== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://cjwocxsfcqllhzhlasuf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqd29jeHNmY3FsbGh6aGxhc3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyOTg1MDcsImV4cCI6MjA3Nzg3NDUwN30.B7HYB7nv7cE5sAfRjRTJSGYnRx18cubfroNyet1mt_A';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function obtenerNombreModulo() {
+  const titulo = document.title;
+  if (titulo.includes('Supervisores')) return 'Supervisores';
+  if (titulo.includes('Andamios')) return 'Andamios';
+  if (titulo.includes('Cubiertas') || titulo.includes('Techos')) return 'Cubiertas y Techos';
+  if (titulo.includes('Escaleras')) return 'Escaleras';
+  if (titulo.includes('Estructuras') || titulo.includes('Encofrados')) return 'Estructuras y Encofrados';
+  if (titulo.includes('Empleadores')) return 'Empleadores';
+  return 'Módulo desconocido';
+}
+
+async function guardarResultadoSupabase() {
+  const nombre = document.getElementById('nombreUsuario').value.trim();
+  
+  if (!nombre) {
+    alert('⚠️ Por favor ingresa tu nombre para guardar el resultado');
+    return;
+  }
+
+  // Mostrar indicador de carga
+  const btnGuardar = event.target;
+  const textoOriginal = btnGuardar.textContent;
+  btnGuardar.textContent = '⏳ Guardando...';
+  btnGuardar.disabled = true;
+
+  const modulo = obtenerNombreModulo();
+  const correcto = parseInt(document.getElementById('mCorrect').textContent, 10);
+  const incorrecto = parseInt(document.getElementById('mWrong').textContent, 10);
+  const saltado = parseInt(document.getElementById('mSkipped').textContent, 10);
+  const porcentaje = parseInt(document.getElementById('mPercent').textContent, 10);
+  const puntaje = correcto * 100;
+
+  const { data, error } = await supabase
+    .from('resultados_test')
+    .insert([{
+      nombre: nombre,
+      modulo: modulo,
+      puntaje: puntaje,
+      correcto: correcto,
+      incorrecto: incorrecto,
+      saltado: saltado,
+      porcentaje: porcentaje
+    }]);
+
+  if (error) {
+    console.error('Error:', error);
+    alert('❌ Error al guardar: ' + error.message);
+    btnGuardar.textContent = textoOriginal;
+    btnGuardar.disabled = false;
+  } else {
+    document.getElementById('mensajeGuardado').style.display = 'block';
+    document.getElementById('mensajeGuardado').textContent = '✅ ¡Resultado guardado correctamente! Puedes reiniciar para intentar de nuevo.';
+    document.getElementById('formNombre').style.display = 'none';
+  }
+}
+
+// MODIFICACIÓN: Resetear formulario al reiniciar
+function resetearFormularioNombre() {
+  document.getElementById('formNombre').style.display = 'block';
+  document.getElementById('mensajeGuardado').style.display = 'none';
+  document.getElementById('nombreUsuario').value = '';
+}
+</script>
+
+</body>
+</html>

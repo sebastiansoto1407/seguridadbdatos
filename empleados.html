@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Empleados — Capacitación en Alturas</title>
+  <meta name="description" content="Portal de módulos para empleados: trabajos en andamios, cubiertas y techos, escaleras, estructuras metálicas y encofrados, y supervisores." />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #0e1217;
+      --card: #151b23;
+      --muted: #9fb0c3;
+      --text: #eaf2ff;
+      --brand1: #2dd4bf;
+      --brand2: #3b82f6;
+      --stroke: #233041;
+      --hover: #1b2330;
+      --ring: 0 0 0 4px rgba(59,130,246,.25);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html,body { height: 100%; }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, rgba(59,130,246,.20), transparent 60%),
+                  radial-gradient(900px 500px at 110% 10%, rgba(45,212,191,.18), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .topbar{
+      position: sticky; top:0; z-index: 40;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(5,9,14,.75), rgba(5,9,14,.35));
+      border-bottom: 1px solid rgba(147,197,253,.12);
+    }
+    .wrap{ max-width: 1200px; margin: 0 auto; padding: 1rem 1.25rem; }
+    .brand{
+      display:flex; align-items:center; gap:.75rem; text-decoration:none; color: var(--text);
+      font-weight: 700; letter-spacing:.2px;
+    }
+    .brand .logo{
+      width: 36px; height: 36px; border-radius: 10px;
+      display:grid; place-items:center;
+      background: conic-gradient(from 210deg, var(--brand1), var(--brand2));
+      box-shadow: 0 10px 30px rgba(59,130,246,.25);
+    }
+    .pagehead{ padding: 2.25rem 1.25rem 1rem; }
+    .pagehead h1{
+      margin:0 0 .25rem 0; font-size: clamp(1.5rem, 2.4vw, 2rem);
+      font-weight: 800; letter-spacing:.2px;
+    }
+    .kicker{
+      display:inline-block; font-size:.85rem; color: var(--muted);
+      border:1px solid rgba(147,197,253,.18); padding:.25rem .6rem; border-radius:999px;
+      background: rgba(59,130,246,.08);
+    }
+    .lead{ color: var(--muted); max-width: 70ch; margin-top:.6rem; }
+
+    .grid{
+      display:grid; gap: 1rem; padding: 1rem 1.25rem 2.5rem;
+      grid-template-columns: repeat(12, 1fr);
+    }
+    @media (max-width: 780px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      grid-column: span 6;
+      background: linear-gradient(180deg, rgba(21,27,35,.9), rgba(21,27,35,.8));
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: 1.1rem;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+      position: relative; overflow: hidden;
+      outline: none;
+    }
+    .card:hover{ transform: translateY(-2px); background: var(--hover); border-color:#2a3a50; }
+    .card:focus-visible{ box-shadow: var(--ring); }
+    @media (max-width: 780px){ .card{ grid-column: span 1; } }
+
+    .card .badge{
+      display:inline-flex; align-items:center; gap:.5rem;
+      font-size:.78rem; color: var(--muted);
+      background: rgba(45,212,191,.10); border:1px solid rgba(45,212,191,.25);
+      padding:.28rem .55rem; border-radius: 999px;
+    }
+    .title{
+      display:flex; align-items:center; gap:.7rem;
+      margin:.65rem 0 .15rem 0;
+      font-size: clamp(1.05rem, 1.6vw, 1.15rem); font-weight: 700;
+    }
+    .desc{ color: var(--muted); margin:.35rem 0 .7rem; }
+    .bullets{ margin:0 0 .9rem 0; padding-left: 1.15rem; color: #cfe2ff; }
+    .bullets li{ margin:.22rem 0; }
+
+    .cta{
+      display:inline-flex; align-items:center; gap:.5rem;
+      padding:.6rem .9rem; border-radius: 12px;
+      text-decoration:none; color:#081018; font-weight: 700;
+      background: linear-gradient(90deg, var(--brand1), var(--brand2));
+      transition: transform .15s ease;
+    }
+    .cta:hover{ transform: translateY(-1px); }
+    .cta:focus-visible{ box-shadow: var(--ring); outline: none; }
+
+    .icon{
+      width: 22px; height: 22px; flex: 0 0 22px;
+      color: #dbeafe;
+    }
+    .watermark{
+      position:absolute; right:-30px; bottom:-30px; width:160px; height:160px; opacity:.08;
+      background: radial-gradient(closest-side, var(--brand2), transparent 70%);
+      filter: blur(10px);
+      pointer-events:none;
+    }
+    footer{
+      border-top: 1px solid rgba(147,197,253,.12);
+      color: var(--muted);
+      padding: 1rem 1.25rem 2rem;
+    }
+    footer a{
+      color:#93c5fd;
+      text-decoration:none;
+      transition: color .2s ease;
+    }
+    footer a:hover{
+      color:#bfdbfe;
+    }
+  </style>
+</head>
+<body>
+  <!-- Topbar -->
+  <header class="topbar" role="banner">
+    <div class="wrap">
+      <a class="brand" href="index.html" aria-label="Volver al inicio">
+        <span class="logo" aria-hidden="true">
+          <!-- Mini icono casco -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 13a9 9 0 0 1 18 0v3a2 2 0 0 1-2 2h-3v-4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v4H5a2 2 0 0 1-2-2v-3Z" stroke="white" stroke-width="1.5"/>
+            <path d="M9 18h6" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span>Simulador de Construcción — Empleados</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Heading -->
+  <section class="pagehead wrap" role="region" aria-labelledby="empleados-heading">
+    <span class="kicker">Portal de módulos</span>
+    <h1 id="empleados-heading">Selecciona un módulo para iniciar</h1>
+    <p class="lead">
+      Cada módulo incluye <strong>preguntas interactivas</strong> con retroalimentación por video
+      (<em>OK/BAD</em>) para reforzar buenas prácticas, identificar riesgos críticos y estandarizar
+      procedimientos seguros en trabajos en altura y estructuras.
+    </p>
+  </section>
+
+  <!-- Grid of Cards -->
+  <main class="grid wrap" role="main">
+    <!-- 1) Gestion de trabajo sobre andamios -->
+    <article class="card" tabindex="0" aria-labelledby="andamios-title">
+      <div class="watermark"></div>
+      <span class="badge" aria-hidden="true">Seguridad de montaje y uso</span>
+      <h2 class="title" id="andamios-title">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 20V4M20 20V4M4 8h16M4 16h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M8 4v16M16 4v16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+        Gestión de trabajo sobre andamios
+      </h2>
+      <p class="desc">
+        Cobertura de <strong>inspección pre-uso</strong>, certificación de componentes,
+        <strong>montaje y anclajes</strong>, plataformas, barandillas, acceso seguro,
+        cargas permitidas y procedimientos ante condiciones adversas (viento/lluvia).
+      </p>
+      <ul class="bullets">
+        <li>Preguntas sobre seguridad en andamios</li>
+        <li>Formato de 4 opciones (A, B, C, D) con 1 respuesta correcta</li>
+        <li>Videos según tu respuesta</li>
+        <li>Feedback inmediato con explicación detallada</li>
+        <li>Listas de verificación previas y responsabilidades</li>
+        <li>Señalización, caídas de objetos y perímetros seguros</li>
+        <li>Rescate y respuesta ante incidentes en altura</li>
+      </ul>
+      <a class="cta" href="andamios.html" aria-label="Entrar al módulo de Gestión de trabajo sobre andamios">Entrar al módulo →</a>
+    </article>
+
+    <!-- 2) Gestión de trabajos en cubiertas y techos -->
+    <article class="card" tabindex="0" aria-labelledby="techos-title">
+      <div class="watermark"></div>
+      <span class="badge" aria-hidden="true">Riesgo de borde y fragilidad</span>
+      <h2 class="title" id="techos-title">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 12L12 4l9 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5 10v10h14V10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        Gestión de trabajos en cubiertas y techos
+      </h2>
+      <p class="desc">
+        Control de acceso a borde, líneas de vida, <strong>anclajes certificados</strong>,
+        tránsito sobre superficies frágiles, uso de EPP (arnés, cabo de vida),
+        meteorología y <strong>plan de rescate</strong>.
+      </p>
+      <ul class="bullets">
+        <li>Preguntas sobre trabajo en techos y cubiertas</li>
+        <li>4 opciones por escenario, solo 1 correcta</li>
+        <li>Retroalimentación con videos educativos</li>
+        <li>Evaluación de resistencia de cubierta y puntos de anclaje</li>
+        <li>Protecciones colectivas vs. individuales</li>
+        <li>Procedimientos en aperturas, lucernarios y pendientes</li>
+        <li>Resumen final con nivel de conocimiento</li>
+      </ul>
+      <a class="cta" href="cubiertas-techos.html" aria-label="Entrar al módulo de Gestión de trabajos en cubiertas y techos">Entrar al módulo →</a>
+    </article>
+
+    <!-- 3) Gestión de trabajos en escaleras portátiles y fijas -->
+    <article class="card" tabindex="0" aria-labelledby="escaleras-title">
+      <div class="watermark"></div>
+      <span class="badge" aria-hidden="true">Accesos y 3 puntos de apoyo</span>
+      <h2 class="title" id="escaleras-title">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M8 3v18M16 3v18M6 7h12M6 12h12M6 17h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        Gestión de trabajos en escaleras portátiles y fijas
+      </h2>
+      <p class="desc">
+        Selección del tipo de escalera, <strong>ángulo y apoyo correcto</strong>, fijación,
+        zonas de paso, trabajo con herramientas, amarre y mantenimiento.
+      </p>
+      <ul class="bullets">
+        <li>Preguntas interactivas sobre uso de escaleras</li>
+        <li>Formato múltiple opción: A, B, C, D</li>
+        <li>Visualización de prácticas correctas e incorrectas</li>
+        <li>Inspección previa: largueros, peldaños, zapatas</li>
+        <li>Limitaciones de altura y trabajo prolongado</li>
+        <li>Alternativas seguras: plataformas y andamios móviles</li>
+        <li>Puntaje y recomendaciones personalizadas</li>
+      </ul>
+      <a class="cta" href="escaleras.html" aria-label="Entrar al módulo de Gestión de trabajos en escaleras portátiles y fijas">Entrar al módulo →</a>
+    </article>
+
+    <!-- 4) Gestión de trabajos en estructuras metálicas y encofrados -->
+    <article class="card" tabindex="0" aria-labelledby="estructuras-title">
+      <div class="watermark"></div>
+      <span class="badge" aria-hidden="true">Montaje, izaje y estabilidad</span>
+      <h2 class="title" id="estructuras-title">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 20h16M4 16l8-12 8 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 16h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        Gestión de trabajos en estructuras metálicas y encofrados
+      </h2>
+      <p class="desc">
+        Ensamble, <strong>apriete de pernos</strong>, alineación y plomeo, señalización de
+        <strong>zonas de izaje</strong>, apuntalamiento de encofrados y control de vibrado/vertido.
+      </p>
+      <ul class="bullets">
+        <li>Escenarios sobre montaje y encofrados</li>
+        <li>Sistema de 4 alternativas con 1 respuesta válida</li>
+        <li>Feedback visual con videos OK/BAD</li>
+        <li>Compatibilidad de sistemas y fichas técnicas</li>
+        <li>Bloqueos, etiquetado y permisos de trabajo</li>
+        <li>Interferencias con electricidad y maniobras con grúa</li>
+        <li>Evaluación final con porcentaje de aciertos</li>
+      </ul>
+      <a class="cta" href="estructuras-encofrados.html" aria-label="Entrar al módulo de Gestión de trabajos en estructuras metálicas y encofrados">Entrar al módulo →</a>
+    </article>
+
+    <!-- 5) Supervisores -->
+    <article class="card" tabindex="0" aria-labelledby="supervisores-title">
+      <div class="watermark"></div>
+      <span class="badge" aria-hidden="true">Liderazgo y control operativo</span>
+      <h2 class="title" id="supervisores-title">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="7" r="3" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        Supervisores
+      </h2>
+      <p class="desc">
+        Rol del supervisor en <strong>planificación del trabajo</strong>, inducción y
+        verificación de competencias, control de permisos, validación de
+        <strong>medidas de control</strong> y <strong>gestión de incidentes</strong>.
+      </p>
+      <ul class="bullets">
+        <li>Preguntas sobre supervisión y liderazgo</li>
+        <li>Formato de opciones múltiples (4 alternativas)</li>
+        <li>Videos demostrativos de buenas y malas prácticas</li>
+        <li>Checklist de campo, auditorías y acciones correctivas</li>
+        <li>Comunicación efectiva y cultura de seguridad</li>
+        <li>Documentación: ATP, AST, permisos y reportes diarios</li>
+        <li>Resumen con evaluación de competencias de supervisión</li>
+      </ul>
+      <a class="cta" href="supervisores.html" aria-label="Entrar al módulo de Supervisores">Entrar al módulo →</a>
+    </article>
+  </main>
+
+  <footer class="wrap" role="contentinfo">
+    © 2025 Simulador de Construcción · Empleados |
+    <a href="empleadores.html">Ir a Empleadores</a> |
+    <a href="index.html">Inicio</a>
+  </footer>
+</body>
+</html>

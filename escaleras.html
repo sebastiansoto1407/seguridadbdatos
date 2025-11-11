@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Gestión de trabajos en escaleras portátiles y fijas — Simulador</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0f1a; --panel:#0f1726; --card:#121c2f; --muted:#9fb0c3; --text:#eaf2ff;
+    --stroke:#22324b; --brand1:#2dd4bf; --brand2:#3b82f6; --ok:#22c55e; --bad:#ef4444; --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(59,130,246,.18), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(45,212,191,.15), transparent 55%),
+    var(--bg); color:var(--text); line-height:1.6}
+  .wrap{max-width:1100px;margin:0 auto;padding:1rem 1.25rem 2rem}
+  header{position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);
+    background:linear-gradient(180deg, rgba(6,10,18,.75), rgba(6,10,18,.3));
+    border-bottom:1px solid rgba(147,197,253,.12)}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:1rem;
+    background:linear-gradient(180deg, rgba(18,28,47,.7), rgba(18,28,47,.3));
+    border:1px solid var(--stroke); padding:.9rem 1rem; border-radius:14px}
+  .progressbar{width:100%;height:8px;background:#0c1526;border-radius:999px;overflow:hidden}
+  .progressbar>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand1),var(--brand2))}
+  .hud{display:flex;gap:1rem;color:#cfe2ff}
+  .pill{background:#10213a;border:1px solid #2a4269;border-radius:999px;padding:.2rem .6rem;font-size:.85rem}
+  .card{margin-top:1rem;background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:1.1rem; box-shadow:0 10px 24px rgba(0,0,0,.25)}
+  .title{margin:.2rem 0 .1rem;font-size:clamp(1.2rem,2.6vw,1.6rem);font-weight:800}
+  .subtitle{margin:0 0 .8rem;color:var(--muted)}
+  .options{display:grid;gap:.6rem}
+  .opt{display:flex;gap:.6rem;align-items:flex-start;padding:.7rem .8rem;background:#0e1a2c;border:1px solid #20324f;border-radius:12px;cursor:pointer}
+  .opt:hover{border-color:#3a5e90;background:#10233e}
+  .opt input{margin-top:.1rem}
+  .actions{display:flex;gap:.6rem;margin-top:1rem;flex-wrap:wrap}
+  .btn{border:none;border-radius:12px;padding:.6rem .95rem;cursor:pointer;font-weight:800}
+  .btn.primary{background:linear-gradient(90deg,var(--brand1),var(--brand2));color:#081018}
+  .btn.secondary{background:#12233e;color:#cae0ff;border:1px solid #2a4269}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .feedback{margin-top:.9rem;border-left:4px solid #2a4269;background:#0f1c30;border-radius:10px;padding:.65rem .8rem;display:none}
+  .feedback.ok{border-left-color:var(--ok)} .feedback.bad{border-left-color:var(--bad)}
+  video{display:none;width:100%;max-height:360px;border-radius:12px;margin-top:.6rem;background:#000}
+  .results{display:none;margin-top:1rem;background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:1.1rem}
+  .results h2{margin:.2rem 0 .6rem;font-size:1.4rem}
+  .grid2{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .metric{background:#0e1a2c;border:1px solid #20324f;border-radius:12px;padding:.8rem}
+  .metric .big{font-size:1.6rem;font-weight:800}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div style="display:flex;gap:.6rem;align-items:center;color:#cfe2ff">
+          <strong id="qCounter">Pregunta 1/16</strong>
+          <span class="pill" id="scorePill">Puntaje: 0</span>
+          <span class="pill" id="skipsPill">Saltadas: 0</span>
+        </div>
+        <div class="progressbar" aria-label="Progreso"><span id="progressFill"></span></div>
+      </div>
+      <div class="hud"><span class="pill">Módulo: Escaleras</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" id="qCard" aria-live="polite">
+    <h2 class="title" id="qTitle">Título</h2>
+    <p class="subtitle" id="qSubtitle">Enunciado</p>
+    <form class="options" id="optForm"></form>
+    <div class="actions">
+      <button class="btn secondary" id="skipBtn" type="button">Saltar</button>
+      <button class="btn primary" id="nextBtn" type="button">Siguiente</button>
+    </div>
+    <div id="feedback" class="feedback"></div>
+    <video id="qVideo" controls preload="metadata"></video>
+  </section>
+
+  <section class="results" id="results">
+    <h2>Resultados del módulo</h2>
+    <div class="grid2">
+      <div class="metric"><div>Respuestas correctas</div><div class="big" id="mCorrect">0</div></div>
+      <div class="metric"><div>Respuestas incorrectas</div><div class="big" id="mWrong">0</div></div>
+      <div class="metric"><div>Preguntas saltadas</div><div class="big" id="mSkipped">0</div></div>
+      <div class="metric"><div>% de capacitación</div><div class="big" id="mPercent">0%</div></div>
+    </div>
+    <p style="color:var(--muted);margin-top:.8rem" id="mHint"></p>
+
+    <!-- FORMULARIO PARA GUARDAR NOMBRE -->
+    <div id="formNombre" style="margin-top:1.5rem;padding:1rem;background:#0e1a2c;border:1px solid #20324f;border-radius:12px;">
+      <label for="nombreUsuario" style="display:block;margin-bottom:.5rem;font-weight:600;color:#eaf2ff;">
+        💾 Ingresa tu nombre para guardar tu resultado:
+      </label>
+      <input 
+        type="text" 
+        id="nombreUsuario" 
+        placeholder="Tu nombre completo"
+        maxlength="100"
+        style="width:100%;padding:.6rem;border-radius:8px;border:1px solid #2a4269;background:#0b1328;color:#eaf2ff;font-size:1rem;margin-bottom:.7rem;"
+      />
+      <button 
+        onclick="guardarResultadoSupabase()" 
+        class="btn primary"
+        style="width:100%;"
+      >
+        💾 Guardar Resultado
+      </button>
+    </div>
+
+    <!-- MENSAJE DE CONFIRMACIÓN -->
+    <div id="mensajeGuardado" style="display:none;margin-top:1rem;padding:.8rem;background:#10b981;color:#fff;border-radius:8px;text-align:center;font-weight:700;"></div>
+
+    <div class="actions" style="margin-top:1rem">
+      <button class="btn primary" type="button" id="restartBtn">Reiniciar módulo</button>
+      <a class="btn secondary" href="empleados.html">Volver a Empleados</a>
+    </div>
+  </section>
+</main>
+
+<script>
+  function shuffle(a){ const r=a.slice(); for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];} return r; }
+
+  const questions = [
+    {
+      title:"Estabilidad de la escalera",
+      subtitle:"¿Qué medida es esencial para garantizar la estabilidad de una escalera portátil antes de usarla?",
+      options:[
+        {text:"Colocarla en una superficie resbaladiza para asegurar su firmeza", feedbackIncorrect:"Superficies resbaladizas incrementan el riesgo de caída."},
+        {text:"Comprobar que la base de la escalera esté nivelada y asegurada", correct:true, feedbackCorrect:"Base nivelada y fija evita deslizamientos o vuelcos."},
+        {text:"Solo colocar la escalera sobre una superficie plana, sin preocupar por la estabilidad", feedbackIncorrect:"La estabilidad depende de más factores que la planitud."},
+        {text:"Asegurar que la escalera esté a la sombra para evitar el calor", feedbackIncorrect:"La prioridad es la estabilidad, no la sombra."}
+      ],
+      media:{ok:"escalera1.mp4", bad:"escalera2.mp4"}
+    },
+    {
+      title:"Zapatas antideslizantes",
+      subtitle:"¿Por qué es importante que una escalera tenga zapatas antideslizantes?",
+      options:[
+        {text:"Para mantener la escalera limpia", feedbackIncorrect:"No es su función principal."},
+        {text:"Para prevenir que la escalera se deslice sobre superficies mojadas o resbaladizas", correct:true, feedbackCorrect:"Proporcionan tracción y estabilidad."},
+        {text:"Para hacer que la escalera sea más ligera", feedbackIncorrect:"No afectan el peso significativamente."},
+        {text:"Para que la escalera sea más fácil de transportar", feedbackIncorrect:"Su objetivo es seguridad, no transporte."}
+      ],
+      media:{ok:"escalera3.mp4", bad:"escalera4.mp4"}
+    },
+    {
+      title:"Zapata dañada",
+      subtitle:"¿Qué debe hacer un trabajador si la escalera portátil que está usando tiene una zapata dañada?",
+      options:[
+        {text:"Seguir trabajando con la escalera y ajustarla según sea necesario", feedbackIncorrect:"Trabajar con daño aumenta el riesgo."},
+        {text:"Informar al supervisor y suspender el trabajo hasta que la zapata sea reparada o reemplazada", correct:true, feedbackCorrect:"Reparar/reemplazar antes de continuar."},
+        {text:"Colocar la escalera sobre una superficie rugosa para contrarrestar el daño", feedbackIncorrect:"No compensa el defecto."},
+        {text:"Usar la escalera con mayor precaución, ya que el daño es mínimo", feedbackIncorrect:"No se asumen riesgos con defectos."}
+      ],
+      media:{ok:"escalera5.mp4", bad:"escalera6.mp4"}
+    },
+    {
+      title:"Función del arnés",
+      subtitle:"¿Cuál es la función del arnés de seguridad cuando se trabaja en una escalera a gran altura?",
+      options:[
+        {text:"Mejorar la comodidad durante el trabajo", feedbackIncorrect:"Su fin no es confort."},
+        {text:"Proteger al trabajador de caídas asegurándolo a un punto seguro", correct:true, feedbackCorrect:"Evita caídas graves asegurando al trabajador."},
+        {text:"Evitar que el trabajador se deslice hacia abajo durante el trabajo", feedbackIncorrect:"Su propósito es anticaídas, no antideslizamiento."},
+        {text:"Reducir el peso del equipo del trabajador", feedbackIncorrect:"No reduce peso."}
+      ],
+      media:{ok:"escalera7.mp4", bad:"escalera8.mp4"}
+    },
+    {
+      title:"EPP esencial en altura",
+      subtitle:"¿Qué equipo de protección personal es esencial para trabajar en una escalera a gran altura?",
+      options:[
+        {text:"Solo botas antideslizantes", feedbackIncorrect:"Se requieren medidas adicionales."},
+        {text:"Casco de seguridad, guantes de agarre y, cuando es necesario, arnés de seguridad", correct:true, feedbackCorrect:"Conjunto de protección completa."},
+        {text:"Solo guantes resistentes", feedbackIncorrect:"Insuficiente sin casco/arnés."},
+        {text:"Solo gafas de protección", feedbackIncorrect:"No previenen caídas."}
+      ],
+      media:{ok:"escalera10.mp4", bad:"escalera10.mp4"}
+    },
+    {
+      title:"Ajuste del arnés",
+      subtitle:"¿Qué debe hacer un trabajador si nota que el arnés de seguridad está mal ajustado antes de usarlo en la escalera?",
+      options:[
+        {text:"Continuar trabajando, ya que no importa si está un poco flojo", feedbackIncorrect:"Un arnés flojo no protege."},
+        {text:"Ajustarlo correctamente o pedir a otro trabajador que lo ajuste", correct:true, feedbackCorrect:"Debe quedar firme y correcto."},
+        {text:"Ignorar el problema, ya que el arnés no es necesario", feedbackIncorrect:"Es esencial según el riesgo."},
+        {text:"Usarlo tal como está, ya que el ajuste no afecta la seguridad", feedbackIncorrect:"El ajuste es crítico."}
+      ],
+      media:{ok:"escalera11.mp4", bad:"escalera12.mp4"}
+    },
+    {
+      title:"Ángulo adecuado",
+      subtitle:"¿Qué debe hacer un trabajador si la escalera está inclinada en un ángulo inadecuado para el trabajo?",
+      options:[
+        {text:"Continuar con el trabajo, ya que el ángulo no es importante", feedbackIncorrect:"El ángulo es clave para la estabilidad."},
+        {text:"Ajustar el ángulo de la escalera o cambiar de lugar la escalera hasta encontrar un ángulo más seguro", correct:true, feedbackCorrect:"Ajustar o reubicar hasta lograr el ángulo seguro."},
+        {text:"Subir solo con precaución", feedbackIncorrect:"El riesgo se mantiene alto."},
+        {text:"Pedirle a otro trabajador que se suba primero para probar la estabilidad", feedbackIncorrect:"No es un método seguro."}
+      ],
+      media:{ok:"escalera13.mp4", bad:"escalera14.mp4"}
+    },
+    {
+      title:"Peldaños dañados",
+      subtitle:"¿Qué acción debe tomar un trabajador si encuentra que los peldaños de la escalera están dañados antes de subir?",
+      options:[
+        {text:"Ignorar el daño y continuar trabajando", feedbackIncorrect:"Puede resultar en accidente grave."},
+        {text:"Informar al supervisor y suspender el trabajo hasta que la escalera sea reparada o reemplazada", correct:true, feedbackCorrect:"Reparación/reemplazo antes de usar."},
+        {text:"Usar la escalera con más precaución", feedbackIncorrect:"No se acepta usarla dañada."},
+        {text:"Reparar los peldaños temporalmente y seguir", feedbackIncorrect:"Arreglo temporal no garantiza seguridad."}
+      ],
+      media:{ok:"escalera15.mp4", bad:"escalera16.mp4"}
+    },
+    {
+      title:"Casco en altura",
+      subtitle:"¿Qué puede suceder si un trabajador no usa un casco de seguridad mientras trabaja en una escalera a gran altura?",
+      options:[
+        {text:"Nada, ya que el casco solo es necesario en trabajos sin altura", feedbackIncorrect:"El casco es esencial también en altura."},
+        {text:"El trabajador puede sufrir graves lesiones en la cabeza si ocurre una caída o si algo cae sobre él", correct:true, feedbackCorrect:"Protege de impactos y objetos que caen."},
+        {text:"El casco solo protege de golpes menores", feedbackIncorrect:"También mitiga lesiones graves."},
+        {text:"No necesita casco si usa arnés correctamente", feedbackIncorrect:"Son protecciones complementarias."}
+      ],
+      media:{ok:"escalera18.mp4", bad:"escalera18.mp4"}
+    },
+    {
+      title:"Casco se cae",
+      subtitle:"¿Qué debe hacer un trabajador si el casco de seguridad que usa se cae al suelo durante el trabajo?",
+      options:[
+        {text:"Continuar trabajando sin el casco", feedbackIncorrect:"Extremadamente riesgoso."},
+        {text:"Revisar el casco por posibles daños y, si es necesario, reemplazarlo", correct:true, feedbackCorrect:"Inspeccionar y reemplazar si hay duda."},
+        {text:"Colocar el casco de vuelta y seguir sin más", feedbackIncorrect:"Una caída puede comprometer su integridad."},
+        {text:"Usar otro casco solo si el supervisor lo indica", feedbackIncorrect:"Debe hacerse de inmediato por seguridad."}
+      ],
+      media:{ok:"escalera19.mp4", bad:"escalera20.mp4"}
+    },
+    {
+      title:"Riesgo de caída de objetos",
+      subtitle:"¿Qué medidas de seguridad deben tomarse si se está trabajando con una escalera cerca de un área con riesgos de caída de objetos?",
+      options:[
+        {text:"Ignorar el riesgo, ya que la escalera está fija", feedbackIncorrect:"Puede causar accidentes graves."},
+        {text:"Usar un casco de seguridad y asegurarse de que la zona esté despejada de objetos caídos", correct:true, feedbackCorrect:"Casco + zona despejada."},
+        {text:"Continuar trabajando solo con guantes de protección", feedbackIncorrect:"Los guantes no protegen la cabeza."},
+        {text:"Dejar que otros trabajadores manejen los objetos peligrosos", feedbackIncorrect:"Todos deben seguir medidas adecuadas."}
+      ],
+      media:{ok:"escalera21.mp4", bad:"escalera22.mp4"}
+    },
+    {
+      title:"EPP clave por caída de objetos",
+      subtitle:"¿Qué equipo es esencial cuando se trabaja en una escalera y el área tiene riesgo de caída de objetos?",
+      options:[
+        {text:"Casco de seguridad", correct:true, feedbackCorrect:"Protege la cabeza de objetos que caen."},
+        {text:"Solo guantes resistentes", feedbackIncorrect:"No protegen ante impactos en la cabeza."},
+        {text:"Botas antideslizantes", feedbackIncorrect:"Importantes, pero no reemplazan el casco."},
+        {text:"Solo gafas de protección", feedbackIncorrect:"Las gafas no sustituyen el casco."}
+      ],
+      media:{ok:"escalera23.mp4", bad:"escalera24.mp4"}
+    },
+    {
+      title:"Acción ante accidente de caída desde altura",
+      subtitle:"¿Cuál es la primera acción que debe tomar un obrero al presenciar un accidente de caída desde altura?",
+      options:[
+        {text:"Llamar inmediatamente a los servicios de emergencia.", correct:true, feedbackCorrect:"La primera acción debe ser alertar a los profesionales para una atención rápida y segura."},
+        {text:"Intentar mover a la persona herida sin esperar ayuda.", feedbackIncorrect:"Esto puede agravar lesiones, especialmente de columna o fracturas."},
+        {text:"Ignorar la situación y continuar trabajando.", feedbackIncorrect:"No intervenir pone en riesgo al afectado y al resto del equipo."},
+        {text:"Evacuar rápidamente el área para evitar más accidentes.", feedbackIncorrect:"Primero hay que activar el protocolo de emergencias antes de evacuar."}
+      ],
+      media:{ok:"andamiop1x30.mp4", bad:"andamiop1x31.mp4"}
+    },
+    {
+      title:"Acción incorrecta tras una caída",
+      subtitle:"¿Qué acción es incorrecta cuando un obrero observa a un compañero que ha caído desde una altura?",
+      options:[
+        {text:"Evaluar la situación sin mover al herido y esperar ayuda profesional.", feedbackIncorrect:"Es correcto no mover al herido y esperar ayuda adecuada si no hay peligro inmediato."},
+        {text:"Comenzar a administrar primeros auxilios sin formación adecuada.", correct:true, feedbackCorrect:"Es un error ayudar sin capacitación porque puede agravar lesiones graves."},
+        {text:"Mantener la calma y dirigir a los demás trabajadores para crear un espacio seguro.", feedbackIncorrect:"Fundamental para evitar nuevos riesgos y coordinar la ayuda."},
+        {text:"Usar equipo de protección personal adecuado antes de acercarse al herido.", feedbackIncorrect:"Siempre se debe usar EPP para auto-protección y evitar contaminaciones."}
+      ],
+      media:{ok:"andamiop1x32.mp4", bad:"andamiop1x33.mp4"}
+    },
+    {
+      title:"Valor personal y seguridad en altura",
+      subtitle:"¿Por qué es fundamental que un trabajador valore su vida mientras realiza tareas en alturas considerables?",
+      options:[
+        {text:"Porque su vida solo le pertenece a él", feedbackIncorrect:"La seguridad del trabajador también afecta a quienes lo rodean."},
+        {text:"Porque su seguridad también afecta la vida de sus seres queridos y su futuro", correct:true, feedbackCorrect:"Protegerse significa cuidar también a familia y entorno."},
+        {text:"Porque su trabajo no tiene importancia si no valora su vida", feedbackIncorrect:"La seguridad pone en valor el trabajo y la vida de todos."},
+        {text:"Porque el riesgo solo lo afecta a él, no a los demás", feedbackIncorrect:"Un accidente impacta a muchas personas, no solo al trabajador."}
+      ],
+      media:{ok:"andamiop1x34.mp4", bad:"andamiop1x35.mp4"}
+    },
+    {
+      title:"Valorar la vida trabajando en escaleras",
+      subtitle:"¿Cómo puede un trabajador asegurarse de que está valorando su vida mientras trabaja en escaleras?",
+      options:[
+        {text:"Solo cuidándose a sí mismo sin preocuparse por el equipo de seguridad", feedbackIncorrect:"El uso de EPP y cumplir los protocolos es esencial, no solo protegerse individualmente."},
+        {text:"Usando todo el equipo de protección personal (EPP) necesario y siguiendo los protocolos de seguridad", correct:true, feedbackCorrect:"Usar EPP y seguir procedimientos demuestra valoración de la propia vida."},
+        {text:"Trabajando lo más rápido posible para terminar antes", feedbackIncorrect:"La prioridad debe ser la seguridad, no la velocidad."},
+        {text:"Ignorando los riesgos si tiene experiencia en el trabajo", feedbackIncorrect:"La experiencia no elimina los riesgos."}
+      ],
+      media:{ok:"andamiop1x36.mp4", bad:"andamiop1x37.mp4"}
+    }
+  ];
+
+  let idx=0, score=0, skipped=0, wrong=0, answeredCurrent=false;
+  let shuffledOptions=[];
+
+  const el = {
+    qTitle: document.getElementById('qTitle'),
+    qSubtitle: document.getElementById('qSubtitle'),
+    form: document.getElementById('optForm'),
+    next: document.getElementById('nextBtn'),
+    skip: document.getElementById('skipBtn'),
+    feedback: document.getElementById('feedback'),
+    video: document.getElementById('qVideo'),
+    qCounter: document.getElementById('qCounter'),
+    scorePill: document.getElementById('scorePill'),
+    skipsPill: document.getElementById('skipsPill'),
+    progress: document.getElementById('progressFill'),
+    results: document.getElementById('results'),
+    qCard: document.getElementById('qCard'),
+    mCorrect: document.getElementById('mCorrect'),
+    mWrong: document.getElementById('mWrong'),
+    mSkipped: document.getElementById('mSkipped'),
+    mPercent: document.getElementById('mPercent'),
+    mHint: document.getElementById('mHint'),
+    restart: document.getElementById('restartBtn'),
+  };
+
+  function renderQuestion(){
+    const q=questions[idx];
+    answeredCurrent=false;
+    el.video.pause(); el.video.currentTime=0; el.video.style.display='none';
+    el.feedback.style.display='none'; el.feedback.textContent=''; el.feedback.className='feedback';
+    el.qTitle.textContent=q.title;
+    el.qSubtitle.textContent=q.subtitle||'';
+    shuffledOptions = shuffle(q.options).map((o,i)=>({...o,_i:i}));
+    el.form.innerHTML='';
+    shuffledOptions.forEach((opt,i)=>{
+      const lab=document.createElement('label');
+      lab.className='opt';
+      lab.innerHTML = `<input type="radio" name="opt" value="${i}"><div><strong>${String.fromCharCode(65+i)})</strong> ${opt.text}</div>`;
+      el.form.appendChild(lab);
+    });
+    el.qCounter.textContent=`Pregunta ${idx+1}/${questions.length}`;
+    el.progress.style.width=(idx/questions.length)*100 + '%';
+    el.next.textContent='Siguiente';
+    el.next.disabled=false;
+  }
+
+  function checkAndShow(){
+    const sel = el.form.querySelector('input[type="radio"]:checked');
+    if(!sel){ alert('Selecciona una opción o usa "Saltar".'); return false; }
+    const choice = parseInt(sel.value,10);
+    const chosen = shuffledOptions[choice];
+    const isCorrect = !!chosen.correct;
+    answeredCurrent = true;
+    if(isCorrect){
+      score++;
+      el.feedback.classList.add('ok');
+      el.feedback.textContent = chosen.feedbackCorrect || '¡Correcto!';
+      el.video.src = questions[idx].media.ok;
+    }else{
+      wrong++;
+      el.feedback.classList.add('bad');
+      el.feedback.textContent = chosen.feedbackIncorrect || 'Respuesta incorrecta.';
+      el.video.src = questions[idx].media.bad;
+    }
+    el.feedback.style.display='block';
+    el.video.style.display='block';
+    el.video.play().catch(()=>{});
+    el.form.querySelectorAll('input').forEach(i=>i.disabled=true);
+    el.scorePill.textContent=`Puntaje: ${score}`;
+    el.next.textContent = (idx===questions.length-1) ? 'Finalizar' : 'Siguiente';
+    return true;
+  }
+
+  function skipQuestion(){ skipped++; el.skipsPill.textContent=`Saltadas: ${skipped}`; goNext(); }
+  function goNext(){ if(idx<questions.length-1){ idx++; renderQuestion(); } else { showResults(); } }
+
+  function showResults(){
+    el.progress.style.width='100%';
+    el.qCard.style.display='none';
+    el.results.style.display='block';
+    const total=questions.length, percent=Math.round((score/total)*100);
+    el.mCorrect.textContent=score;
+    el.mWrong.textContent=wrong;
+    el.mSkipped.textContent=skipped;
+    el.mPercent.textContent=percent+'%';
+    let hint='Nivel de capacitación: ';
+    if(percent>=90) hint+='Excelente ✅';
+    else if(percent>=75) hint+='Adecuado 👍';
+    else if(percent>=60) hint+='Básico ⚠️';
+    else hint+='Insuficiente ❌';
+    el.mHint.textContent=hint;
+  }
+
+  el.next.addEventListener('click', ()=>{ if(!answeredCurrent){ if(!checkAndShow()) return; } else { goNext(); } });
+  el.skip.addEventListener('click', skipQuestion);
+  el.restart.addEventListener('click', ()=>{ 
+    idx=0;score=0;skipped=0;wrong=0; 
+    el.qCard.style.display='block'; 
+    el.results.style.display='none'; 
+    el.scorePill.textContent='Puntaje: 0'; 
+    el.skipsPill.textContent='Saltadas: 0'; 
+    resetearFormularioNombre();
+    renderQuestion(); 
+  });
+
+  renderQuestion();
+</script>
+
+<!-- ==================== INTEGRACIÓN SUPABASE ==================== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://cjwocxsfcqllhzhlasuf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqd29jeHNmY3FsbGh6aGxhc3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyOTg1MDcsImV4cCI6MjA3Nzg3NDUwN30.B7HYB7nv7cE5sAfRjRTJSGYnRx18cubfroNyet1mt_A';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function obtenerNombreModulo() {
+  const titulo = document.title.toLowerCase();
+  
+  if (titulo.includes('escaleras')) {
+    return 'Escaleras';
+  }
+  if (titulo.includes('estructuras') || titulo.includes('encofrados')) {
+    return 'Estructuras y Encofrados';
+  }
+  if (titulo.includes('supervisores')) {
+    return 'Supervisores';
+  }
+  if (titulo.includes('andamios')) {
+    return 'Andamios';
+  }
+  if (titulo.includes('cubiertas') || titulo.includes('techos')) {
+    return 'Cubiertas y Techos';
+  }
+  if (titulo.includes('empleadores')) {
+    return 'Empleadores';
+  }
+  
+  return document.title;
+}
+
+async function guardarResultadoSupabase() {
+  const nombre = document.getElementById('nombreUsuario').value.trim();
+  if (!nombre) {
+    alert('⚠️ Por favor ingresa tu nombre para guardar el resultado');
+    return;
+  }
+
+  const btnGuardar = event.target;
+  const textoOriginal = btnGuardar.textContent;
+  btnGuardar.textContent = '⏳ Guardando...';
+  btnGuardar.disabled = true;
+
+  const modulo = obtenerNombreModulo();
+  const correcto = parseInt(document.getElementById('mCorrect').textContent, 10);
+  const incorrecto = parseInt(document.getElementById('mWrong').textContent, 10);
+  const saltado = parseInt(document.getElementById('mSkipped').textContent, 10);
+  const porcentaje = parseInt(document.getElementById('mPercent').textContent, 10);
+  const puntaje = correcto * 100;
+
+  console.log('Guardando:', { nombre, modulo, puntaje, correcto, incorrecto, saltado, porcentaje });
+
+  const { data, error } = await supabase
+    .from('resultados_test')
+    .insert([{
+      nombre: nombre,
+      modulo: modulo,
+      puntaje: puntaje,
+      correcto: correcto,
+      incorrecto: incorrecto,
+      saltado: saltado,
+      porcentaje: porcentaje
+    }]);
+
+  if (error) {
+    console.error('Error:', error);
+    alert('❌ Error al guardar: ' + error.message);
+    btnGuardar.textContent = textoOriginal;
+    btnGuardar.disabled = false;
+  } else {
+    document.getElementById('mensajeGuardado').style.display = 'block';
+    document.getElementById('mensajeGuardado').textContent = '✅ ¡Resultado guardado correctamente! Puedes reiniciar para intentar de nuevo.';
+    document.getElementById('formNombre').style.display = 'none';
+  }
+}
+
+function resetearFormularioNombre() {
+  document.getElementById('formNombre').style.display = 'block';
+  document.getElementById('mensajeGuardado').style.display = 'none';
+  document.getElementById('nombreUsuario').value = '';
+}
+</script>
+</body>
+</html>

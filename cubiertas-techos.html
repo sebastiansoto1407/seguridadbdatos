@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Gestión de trabajos en cubiertas y techos — Simulador</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0f1a; --panel:#0f1726; --card:#121c2f; --muted:#9fb0c3; --text:#eaf2ff;
+    --stroke:#22324b; --brand1:#2dd4bf; --brand2:#3b82f6; --ok:#22c55e; --bad:#ef4444; --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(59,130,246,.18), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(45,212,191,.15), transparent 55%),
+    var(--bg); color:var(--text); line-height:1.6}
+  .wrap{max-width:1100px;margin:0 auto;padding:1rem 1.25rem 2rem}
+  header{position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);
+    background:linear-gradient(180deg, rgba(6,10,18,.75), rgba(6,10,18,.3));
+    border-bottom:1px solid rgba(147,197,253,.12)}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:1rem;
+    background:linear-gradient(180deg, rgba(18,28,47,.7), rgba(18,28,47,.3));
+    border:1px solid var(--stroke); padding:.9rem 1rem; border-radius:14px}
+  .progressbar{width:100%;height:8px;background:#0c1526;border-radius:999px;overflow:hidden;margin-top:.5rem}
+  .progressbar>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand1),var(--brand2));transition:width .3s ease}
+  .hud{display:flex;gap:1rem;color:#cfe2ff}
+  .pill{background:#10213a;border:1px solid #2a4269;border-radius:999px;padding:.2rem .6rem;font-size:.85rem}
+  .card{margin-top:1rem;background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:1.1rem;box-shadow:0 10px 24px rgba(0,0,0,.25)}
+  .title{margin:.2rem 0 .1rem;font-size:clamp(1.2rem,2.6vw,1.6rem);font-weight:800}
+  .subtitle{margin:0 0 .8rem;color:var(--muted)}
+  .options{display:grid;gap:.6rem}
+  .opt{display:flex;gap:.6rem;align-items:flex-start;padding:.7rem .8rem;background:#0e1a2c;border:1px solid #20324f;border-radius:12px;cursor:pointer}
+  .opt:hover{border-color:#3a5e90;background:#10233e}
+  .opt input{margin-top:.1rem}
+  .actions{display:flex;gap:.6rem;margin-top:1rem;flex-wrap:wrap}
+  .btn{border:none;border-radius:12px;padding:.6rem .95rem;cursor:pointer;font-weight:800}
+  .btn.primary{background:linear-gradient(90deg,var(--brand1),var(--brand2));color:#081018}
+  .btn.secondary{background:#12233e;color:#cae0ff;border:1px solid #2a4269}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .feedback{margin-top:.9rem;border-left:4px solid #2a4269;background:#0f1c30;border-radius:10px;padding:.65rem .8rem;display:none}
+  .feedback.ok{border-left-color:var(--ok)} .feedback.bad{border-left-color:var(--bad)}
+  video{display:none;width:100%;max-height:360px;border-radius:12px;margin-top:.6rem;background:#000}
+  .results{display:none;margin-top:1rem;background:var(--panel);border:1px solid var(--stroke);border-radius:var(--radius);padding:1.1rem}
+  .results h2{margin:.2rem 0 .6rem;font-size:1.4rem}
+  .grid2{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .metric{background:#0e1a2c;border:1px solid #20324f;border-radius:12px;padding:.8rem}
+  .metric .big{font-size:1.6rem;font-weight:800}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div style="display:flex;gap:.6rem;align-items:center;color:#cfe2ff">
+          <strong id="qCounter">Pregunta 1/19</strong>
+          <span class="pill" id="scorePill">Puntaje: 0</span>
+          <span class="pill" id="skipsPill">Saltadas: 0</span>
+        </div>
+        <div class="progressbar"><span id="progressFill"></span></div>
+      </div>
+      <div class="hud"><span class="pill">Módulo: Cubiertas y Techos</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" id="qCard">
+    <h2 class="title" id="qTitle">Título</h2>
+    <p class="subtitle" id="qSubtitle">Enunciado</p>
+    <form class="options" id="optForm"></form>
+    <div class="actions">
+      <button class="btn secondary" id="skipBtn" type="button">Saltar</button>
+      <button class="btn primary" id="nextBtn" type="button">Siguiente</button>
+    </div>
+    <div id="feedback" class="feedback"></div>
+    <video id="qVideo" controls preload="metadata"></video>
+  </section>
+
+  <section class="results" id="results">
+    <h2>Resultados del módulo</h2>
+    <div class="grid2">
+      <div class="metric"><div>Respuestas correctas</div><div class="big" id="mCorrect">0</div></div>
+      <div class="metric"><div>Respuestas incorrectas</div><div class="big" id="mWrong">0</div></div>
+      <div class="metric"><div>Preguntas saltadas</div><div class="big" id="mSkipped">0</div></div>
+      <div class="metric"><div>% de capacitación</div><div class="big" id="mPercent">0%</div></div>
+    </div>
+    <p style="color:var(--muted);margin-top:.8rem" id="mHint"></p>
+
+    <div id="formNombre" style="margin-top:1.5rem;padding:1rem;background:#0e1a2c;border:1px solid #20324f;border-radius:12px">
+      <label for="nombreUsuario" style="display:block;margin-bottom:.5rem;font-weight:600;color:#eaf2ff">
+        💾 Ingresa tu nombre para guardar tu resultado:
+      </label>
+      <input type="text" id="nombreUsuario" placeholder="Tu nombre completo" maxlength="100"
+        style="width:100%;padding:.6rem;border-radius:8px;border:1px solid #2a4269;background:#0b1328;color:#eaf2ff;font-size:1rem;margin-bottom:.7rem"/>
+      <button onclick="guardarResultadoSupabase()" class="btn primary" style="width:100%">💾 Guardar Resultado</button>
+    </div>
+
+    <div id="mensajeGuardado" style="display:none;margin-top:1rem;padding:.8rem;background:#10b981;color:#fff;border-radius:8px;text-align:center;font-weight:700"></div>
+
+    <div class="actions" style="margin-top:1rem">
+      <button class="btn primary" type="button" id="restartBtn">Reiniciar módulo</button>
+      <a class="btn secondary" href="empleados.html">Volver a Empleados</a>
+    </div>
+  </section>
+</main>
+
+<script>
+  function shuffle(a){ const r=a.slice(); for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];} return r; }
+
+  const questions = [
+    {
+      title:"Medida principal",
+      subtitle:"¿Cuál es la principal medida de seguridad al trabajar en cubiertas o techos?",
+      options:[
+        {text:"Usar arnés de seguridad con línea de vida", correct:true, feedbackCorrect:"El arnés con línea de vida es crucial para prevenir caídas desde alturas en cubiertas y techos."},
+        {text:"Solo asegurarse de que el techo esté limpio antes de comenzar", feedbackIncorrect:"Aunque es importante mantener el área limpia, la prioridad es proteger de caídas."},
+        {text:"Trabajar durante el día para evitar el riesgo de caídas", feedbackIncorrect:"Trabajar de día no elimina el riesgo; necesitas medidas de control."},
+        {text:"Usar guantes de protección para evitar lesiones en las manos", feedbackIncorrect:"Los guantes no previenen caídas, principal riesgo en techos."}
+      ],
+      media:{ok:"cubiertas1.mp4", bad:"cubiertas2.mp4"}
+    },
+    {
+      title:"Techo dañado",
+      subtitle:"¿Qué debe hacer un trabajador si observa que la cubierta o techo donde va a trabajar tiene signos de daño o inestabilidad?",
+      options:[
+        {text:"Continuar trabajando, ya que los daños no afectan la seguridad", feedbackIncorrect:"Trabajar sobre daño estructural puede terminar en accidente grave."},
+        {text:"Informar inmediatamente al supervisor y esperar su evaluación antes de continuar", correct:true, feedbackCorrect:"Debe evaluarse la seguridad antes de seguir."},
+        {text:"Trabajar solo en las áreas que parecen más seguras, sin preocuparle el resto", feedbackIncorrect:"No se asume seguridad sin evaluación completa."},
+        {text:"Ignorar el daño, ya que el techo está diseñado para soportar el peso", feedbackIncorrect:"Cualquier daño debe revisarse de inmediato."}
+      ],
+      media:{ok:"cubiertas3.mp4", bad:"cubiertas4.mp4"}
+    },
+    {
+      title:"EPP esencial",
+      subtitle:"¿Qué equipo de protección personal (EPP) es esencial para evitar caídas mientras se trabaja en un techo o cubierta?",
+      options:[
+        {text:"Solo un casco de seguridad", feedbackIncorrect:"Importante, pero no previene caídas."},
+        {text:"Un arnés de seguridad con línea de vida y casco con barboquejo", correct:true, feedbackCorrect:"Conjunto fundamental: caída y protección craneal."},
+        {text:"Guantes de protección y gafas de seguridad", feedbackIncorrect:"No evitan caídas."},
+        {text:"Solo botas antideslizantes", feedbackIncorrect:"Necesarias, pero insuficientes sin arnés."}
+      ],
+      media:{ok:"cubiertas5.mp4", bad:"cubiertas6.mp4"}
+    },
+    {
+      title:"Clima adverso",
+      subtitle:"¿Qué debe hacer un trabajador si el clima cambia repentinamente mientras trabaja en un techo o cubierta?",
+      options:[
+        {text:"Continuar trabajando sin preocuparse, ya que el techo no se verá afectado", feedbackIncorrect:"Lluvia/viento elevan el riesgo de caída."},
+        {text:"Detener el trabajo inmediatamente si las condiciones meteorológicas aumentan el riesgo de caídas, como lluvia o viento", correct:true, feedbackCorrect:"Al empeorar el clima, se suspende la tarea."},
+        {text:"Solo preocuparse si hay tormentas eléctricas", feedbackIncorrect:"Viento y lluvia también son peligrosos."},
+        {text:"Usar una capa de lluvia para continuar trabajando sin interrumpir el trabajo", feedbackIncorrect:"La capa no elimina el riesgo de caída."}
+      ],
+      media:{ok:"cubiertas7.mp4", bad:"cubiertas8.mp4"}
+    },
+    {
+      title:"Antes de empezar",
+      subtitle:"¿Qué es lo primero que debe revisar un trabajador antes de comenzar a trabajar en un techo o cubierta?",
+      options:[
+        {text:"Solo los materiales y herramientas que va a usar", feedbackIncorrect:"La prioridad es la seguridad del lugar y EPP."},
+        {text:"La estabilidad del techo, los anclajes de seguridad y los equipos de protección personal", correct:true, feedbackCorrect:"Verificar techo, anclajes y EPP."},
+        {text:"La cantidad de trabajo que queda por hacer en el techo", feedbackIncorrect:"No es más importante que la seguridad."},
+        {text:"Las condiciones del clima, ya que solo el mal tiempo es un riesgo", feedbackIncorrect:"También importan estabilidad y anclajes."}
+      ],
+      media:{ok:"cubiertas9.mp4", bad:"cubiertas10.mp4"}
+    },
+    {
+      title:"Botas antideslizantes",
+      subtitle:"¿Cuál es la función principal de las botas con suela antideslizante en trabajos en cubiertas o techos?",
+      options:[
+        {text:"Proteger los pies de lesiones menores", feedbackIncorrect:"La función clave es evitar resbalones."},
+        {text:"Evitar resbalones y caídas en superficies mojadas o resbaladizas", correct:true, feedbackCorrect:"Reduce caídas en superficie mojada/resbalosa."},
+        {text:"Mejorar el confort durante largos turnos de trabajo", feedbackIncorrect:"La seguridad es la función principal."},
+        {text:"Asegurar que los trabajadores no tengan que cambiarse de calzado durante el trabajo", feedbackIncorrect:"No es el objetivo central."}
+      ],
+      media:{ok:"cubiertas11.mp4", bad:"cubiertas12.mp4"}
+    },
+    {
+      title:"Acción del supervisor",
+      subtitle:"¿Qué debe hacer un supervisor si detecta que un trabajador no está utilizando el equipo de protección adecuado en el techo?",
+      options:[
+        {text:"No intervenir si el trabajo no parece peligroso", feedbackIncorrect:"Nunca se omite la intervención."},
+        {text:"Dejar que el trabajador continúe hasta que termine su tarea", feedbackIncorrect:"Debe detenerse de inmediato."},
+        {text:"Detener el trabajo inmediatamente y asegurarse de que el trabajador esté correctamente equipado antes de continuar", correct:true, feedbackCorrect:"Primero equipamiento correcto, luego continuar."},
+        {text:"Permitir que el trabajador siga con la tarea, ya que es un trabajo rutinario", feedbackIncorrect:"La rutina no reduce el riesgo."}
+      ],
+      media:{ok:"cubiertas13.mp4", bad:"cubiertas14.mp4"}
+    },
+    {
+      title:"Riesgo detectado",
+      subtitle:"¿Cómo debería un trabajador proceder si nota que hay un riesgo potencial de caídas en un techo o cubierta, como una grieta o un área débil?",
+      options:[
+        {text:"Continuar trabajando y reportarlo después de terminar la tarea", feedbackIncorrect:"Debe abordarse de inmediato."},
+        {text:"Ignorar el problema si no parece ser un riesgo inmediato", feedbackIncorrect:"Nunca se ignora una debilidad estructural."},
+        {text:"Informar inmediatamente al supervisor y evitar la zona hasta que se resuelva el riesgo", correct:true, feedbackCorrect:"Reportar y aislar la zona."},
+        {text:"Seguir trabajando con precaución, ya que el riesgo no afecta la seguridad general", feedbackIncorrect:"Se requiere evaluación y corrección previas."}
+      ],
+      media:{ok:"cubiertas15.mp4", bad:"cubiertas16.mp4"}
+    },
+    {
+      title:"Sin arnés",
+      subtitle:"¿Qué efectos podría tener la falta de equipo de protección adecuado, como un arnés de seguridad, en el bienestar de un trabajador en una cubierta o techo?",
+      options:[
+        {text:"Ningún efecto, ya que el trabajo puede realizarse sin equipo de protección", feedbackIncorrect:"Aumenta enormemente el riesgo."},
+        {text:"Aumenta significativamente el riesgo de caídas y lesiones graves que pueden poner en peligro la vida del trabajador", correct:true, feedbackCorrect:"El EPP evita caídas y lesiones graves."},
+        {text:"Solo aumenta la incomodidad del trabajador, pero no afecta su seguridad", feedbackIncorrect:"Compromete la vida, no solo la comodidad."},
+        {text:"Puede hacer que el trabajo sea más fácil y rápido, sin necesidad de detenerse por seguridad", feedbackIncorrect:"Nunca se sacrifica seguridad por rapidez."}
+      ],
+      media:{ok:"cubiertas17.mp4", bad:"cubiertas18.mp4"}
+    },
+    {
+      title:"Cuerda con mosquetón",
+      subtitle:"¿Cuál es la principal función de una cuerda de seguridad con mosquetón en trabajos de altura?",
+      options:[
+        {text:"Proteger al trabajador de las inclemencias del tiempo", feedbackIncorrect:"No es su función."},
+        {text:"Permitir que el trabajador se desplace libremente por el área de trabajo", feedbackIncorrect:"El desplazamiento es limitado y controlado."},
+        {text:"Evitar caídas asegurando al trabajador a un punto fijo", correct:true, feedbackCorrect:"Función principal: anticaídas."},
+        {text:"Mejorar la visibilidad del trabajador en el lugar de trabajo", feedbackIncorrect:"No mejora visibilidad."}
+      ],
+      media:{ok:"cubiertas19.mp4", bad:"cubiertas20.mp4"}
+    },
+    {
+      title:"Mosquetón dañado",
+      subtitle:"¿Qué debe hacer un trabajador si nota que el mosquetón utilizado en su equipo de seguridad está dañado?",
+      options:[
+        {text:"Continuar trabajando hasta terminar la tarea", feedbackIncorrect:"Extremadamente peligroso."},
+        {text:"Intentar repararlo por sí mismo para seguir trabajando", feedbackIncorrect:"Debe reemplazarse, no repararse por el usuario."},
+        {text:"Informar inmediatamente al supervisor y esperar la sustitución del equipo", correct:true, feedbackCorrect:"Reportar y reemplazar antes de continuar."},
+        {text:"Usarlo de todos modos, ya que el daño no afecta su función", feedbackIncorrect:"Compromete la seguridad."}
+      ],
+      media:{ok:"cubiertas21.mp4", bad:"cubiertas22.mp4"}
+    },
+    {
+      title:"Línea de vida temporal",
+      subtitle:"¿Qué es una línea de vida temporal y cuándo debe utilizarse?",
+      options:[
+        {text:"Un sistema de soporte que se instala solo durante el día", feedbackIncorrect:"No depende del horario."},
+        {text:"Un sistema de anclaje portátil que se utiliza cuando no hay puntos fijos en la cubierta", correct:true, feedbackCorrect:"Línea temporal: anclaje portátil cuando no hay puntos fijos."},
+        {text:"Una herramienta que mejora la visibilidad del trabajador", feedbackIncorrect:"No mejora visibilidad."},
+        {text:"Un accesorio que solo se usa en techos planos", feedbackIncorrect:"Se usa en cualquier cubierta sin anclaje fijo."}
+      ],
+      media:{ok:"cubiertas12.mp4", bad:"cubiertas13.mp4"}
+    },
+    {
+      title:"Caída libre",
+      subtitle:"¿Qué medida debe tomar un trabajador si su arnés de seguridad no está anclado correctamente y corre el riesgo de caída libre?",
+      options:[
+        {text:"Continuar trabajando y corregir el problema después", feedbackIncorrect:"Riesgo inmediato de caída."},
+        {text:"Detener el trabajo inmediatamente y asegurar el arnés correctamente antes de continuar", correct:true, feedbackCorrect:"Detenerse y anclar correctamente."},
+        {text:"Trabajar sin el arnés hasta que pueda corregir el problema", feedbackIncorrect:"Nunca trabajar sin arnés."},
+        {text:"Pedir ayuda solo si el riesgo parece alto", feedbackIncorrect:"Cualquier anclaje incorrecto es peligroso."}
+      ],
+      media:{ok:"cubiertas14.mp4", bad:"cubiertas15.mp4"}
+    },
+    {
+      title:"Guantes resistentes",
+      subtitle:"¿Qué características deben tener los guantes resistentes para trabajos en cubiertas o techos?",
+      options:[
+        {text:"Ser ligeros y transpirables, sin necesidad de protección adicional", feedbackIncorrect:"También deben ser resistentes y con agarre."},
+        {text:"Ser resistentes a cortes, abrasiones y materiales peligrosos, además de ofrecer agarre", correct:true, feedbackCorrect:"Protección + buen agarre."},
+        {text:"Ser baratos y desechables", feedbackIncorrect:"La seguridad exige calidad y resistencia."},
+        {text:"Ser decorativos, ya que los guantes no afectan la seguridad", feedbackIncorrect:"Son EPP crítico, no decoración."}
+      ],
+      media:{ok:"cubiertas23.mp4", bad:"cubiertas24.mp4"}
+    },
+    {
+      title:"Casco cayó",
+      subtitle:"¿Qué debe hacer un trabajador si el casco de seguridad que está usando se cae al suelo durante el trabajo?",
+      options:[
+        {text:"Seguir trabajando sin el casco, ya que no es necesario", feedbackIncorrect:"El casco es obligatorio."},
+        {text:"Volver a usar el casco si parece estar en buenas condiciones", feedbackIncorrect:"Una caída puede comprometer su integridad."},
+        {text:"Revisar el casco por posibles daños y, si es necesario, reemplazarlo inmediatamente", correct:true, feedbackCorrect:"Inspeccionar y reemplazar si hay duda."},
+        {text:"Intentar arreglar el casco para que pueda seguir usándolo", feedbackIncorrect:"No se repara; se reemplaza."}
+      ],
+      media:{ok:"cubiertas25.mp4", bad:"cubiertas26.mp4"}
+    },
+    {
+      title:"Sin mosquetón",
+      subtitle:"¿Qué riesgo implica trabajar sin un mosquetón adecuado mientras se utiliza una cuerda de seguridad?",
+      options:[
+        {text:"Ningún riesgo, ya que el trabajador está asegurado por la cuerda", feedbackIncorrect:"El anclaje depende del mosquetón."},
+        {text:"El trabajador puede caerse, ya que no está correctamente asegurado a un punto fijo", correct:true, feedbackCorrect:"Sin mosquetón adecuado, no hay aseguramiento confiable."},
+        {text:"El riesgo se limita a la incomodidad del trabajador", feedbackIncorrect:"El riesgo real es la caída."},
+        {text:"No hay riesgo significativo, ya que el trabajo se realiza a baja altura", feedbackIncorrect:"Aun baja altura puede causar lesiones serias."}
+      ],
+      media:{ok:"cubiertas27.mp4", bad:"cubiertas28.mp4"}
+    },
+    {
+      title:"Punto de anclaje",
+      subtitle:"¿Qué debe verificar un trabajador antes de usar un punto de anclaje en una cubierta o techo?",
+      options:[
+        {text:"Solo que el punto esté limpio", feedbackIncorrect:"Importa su resistencia y certificación."},
+        {text:"Que el punto esté certificado y sea capaz de soportar la carga requerida", correct:true, feedbackCorrect:"Certificado + capacidad de carga."},
+        {text:"Que el punto esté cerca de la zona de trabajo", feedbackIncorrect:"Más importante es su resistencia."},
+        {text:"Que nadie más esté usando el punto de anclaje", feedbackIncorrect:"La certificación es prioritaria."}
+      ],
+      media:{ok:"cubiertas16.mp4", bad:"cubiertas17.mp4"}
+    },
+    {
+      title:"Barboquejo",
+      subtitle:"¿Cuál es la ventaja de usar un casco con barboquejo durante trabajos en techos o cubiertas?",
+      options:[
+        {text:"Mejorar la visibilidad del trabajador", feedbackIncorrect:"No está para ver mejor."},
+        {text:"Mantener el casco en su lugar incluso si el trabajador se mueve rápidamente o sufre una caída", correct:true, feedbackCorrect:"Evita que el casco se desprenda."},
+        {text:"Asegurar que el casco se ajuste cómodamente, sin importar el movimiento", feedbackIncorrect:"El ajuste importa, pero la ventaja clave es sujeción."},
+        {text:"Asegurar que el casco esté limpio en todo momento", feedbackIncorrect:"La limpieza no es la finalidad."}
+      ],
+      media:{ok:"cubiertas29.mp4", bad:"cubiertas30.mp4"}
+    },
+    {
+      title:"Acción ante accidente de caída desde altura",
+      subtitle:"¿Cuál es la primera acción que debe tomar un obrero al presenciar un accidente de caída desde altura?",
+      options:[
+        {text:"Llamar inmediatamente a los servicios de emergencia.", correct:true, feedbackCorrect:"La primera acción debe ser alertar a los profesionales para una atención rápida y segura."},
+        {text:"Intentar mover a la persona herida sin esperar ayuda.", feedbackIncorrect:"Esto puede agravar lesiones, especialmente de columna o fracturas."},
+        {text:"Ignorar la situación y continuar trabajando.", feedbackIncorrect:"No intervenir pone en riesgo al afectado y al resto del equipo."},
+        {text:"Evacuar rápidamente el área para evitar más accidentes.", feedbackIncorrect:"Primero hay que activar el protocolo de emergencias antes de evacuar."}
+      ],
+      media:{ok:"andamiop1x30.mp4", bad:"andamiop1x31.mp4"}
+    }
+  ];
+
+  let idx=0, score=0, skipped=0, wrong=0, answeredCurrent=false;
+  let shuffledOptions=[];
+
+  const el = {
+    qTitle: document.getElementById('qTitle'),
+    qSubtitle: document.getElementById('qSubtitle'),
+    form: document.getElementById('optForm'),
+    next: document.getElementById('nextBtn'),
+    skip: document.getElementById('skipBtn'),
+    feedback: document.getElementById('feedback'),
+    video: document.getElementById('qVideo'),
+    qCounter: document.getElementById('qCounter'),
+    scorePill: document.getElementById('scorePill'),
+    skipsPill: document.getElementById('skipsPill'),
+    progress: document.getElementById('progressFill'),
+    results: document.getElementById('results'),
+    qCard: document.getElementById('qCard'),
+    mCorrect: document.getElementById('mCorrect'),
+    mWrong: document.getElementById('mWrong'),
+    mSkipped: document.getElementById('mSkipped'),
+    mPercent: document.getElementById('mPercent'),
+    mHint: document.getElementById('mHint'),
+    restart: document.getElementById('restartBtn'),
+  };
+
+  function renderQuestion(){
+    const q=questions[idx];
+    answeredCurrent=false;
+    el.video.pause(); el.video.currentTime=0; el.video.style.display='none';
+    el.feedback.style.display='none'; el.feedback.textContent=''; el.feedback.className='feedback';
+    el.qTitle.textContent=q.title;
+    el.qSubtitle.textContent=q.subtitle||'';
+    shuffledOptions = shuffle(q.options).map((o,i)=>({...o,_i:i}));
+    el.form.innerHTML='';
+    shuffledOptions.forEach((opt,i)=>{
+      const lab=document.createElement('label');
+      lab.className='opt';
+      lab.innerHTML = `<input type="radio" name="opt" value="${i}"><div><strong>${String.fromCharCode(65+i)})</strong> ${opt.text}</div>`;
+      el.form.appendChild(lab);
+    });
+    el.qCounter.textContent=`Pregunta ${idx+1}/${questions.length}`;
+    el.progress.style.width=(idx/questions.length)*100 + '%';
+    el.next.textContent='Siguiente';
+    el.next.disabled=false;
+  }
+
+  function checkAndShow(){
+    const sel = el.form.querySelector('input[type="radio"]:checked');
+    if(!sel){ alert('Selecciona una opción o usa "Saltar".'); return false; }
+    const choice = parseInt(sel.value,10);
+    const chosen = shuffledOptions[choice];
+    const isCorrect = !!chosen.correct;
+    answeredCurrent = true;
+    if(isCorrect){
+      score++;
+      el.feedback.classList.add('ok');
+      el.feedback.textContent = chosen.feedbackCorrect || '¡Correcto!';
+      el.video.src = questions[idx].media.ok;
+    }else{
+      wrong++;
+      el.feedback.classList.add('bad');
+      el.feedback.textContent = chosen.feedbackIncorrect || 'Respuesta incorrecta.';
+      el.video.src = questions[idx].media.bad;
+    }
+    el.feedback.style.display='block';
+    el.video.style.display='block';
+    el.video.play().catch(()=>{});
+    el.form.querySelectorAll('input').forEach(i=>i.disabled=true);
+    el.scorePill.textContent=`Puntaje: ${score}`;
+    el.next.textContent = (idx===questions.length-1) ? 'Finalizar' : 'Siguiente';
+    return true;
+  }
+
+  function skipQuestion(){ skipped++; el.skipsPill.textContent=`Saltadas: ${skipped}`; goNext(); }
+  function goNext(){ if(idx<questions.length-1){ idx++; renderQuestion(); } else { showResults(); } }
+
+  function showResults(){
+    el.progress.style.width='100%';
+    el.qCard.style.display='none';
+    el.results.style.display='block';
+    const total=questions.length, percent=Math.round((score/total)*100);
+    el.mCorrect.textContent=score;
+    el.mWrong.textContent=wrong;
+    el.mSkipped.textContent=skipped;
+    el.mPercent.textContent=percent+'%';
+    let hint='Nivel de capacitación: ';
+    if(percent>=90) hint+='Excelente ✅';
+    else if(percent>=75) hint+='Adecuado 👍';
+    else if(percent>=60) hint+='Básico ⚠️';
+    else hint+='Insuficiente ❌';
+    el.mHint.textContent=hint;
+  }
+
+  el.next.addEventListener('click', ()=>{ if(!answeredCurrent){ if(!checkAndShow()) return; } else { goNext(); } });
+  el.skip.addEventListener('click', skipQuestion);
+  el.restart.addEventListener('click', ()=>{ 
+    idx=0;score=0;skipped=0;wrong=0; 
+    el.qCard.style.display='block'; 
+    el.results.style.display='none'; 
+    el.scorePill.textContent='Puntaje: 0'; 
+    el.skipsPill.textContent='Saltadas: 0'; 
+    resetearFormularioNombre();
+    renderQuestion(); 
+  });
+
+  renderQuestion();
+</script>
+
+<!-- INTEGRACIÓN SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://cjwocxsfcqllhzhlasuf.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqd29jeHNmY3FsbGh6aGxhc3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyOTg1MDcsImV4cCI6MjA3Nzg3NDUwN30.B7HYB7nv7cE5sAfRjRTJSGYnRx18cubfroNyet1mt_A';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  function obtenerNombreModulo() {
+    const titulo = document.title.toLowerCase();
+    if (titulo.includes('cubiertas') || titulo.includes('techos')) return 'Cubiertas y Techos';
+    if (titulo.includes('empleadores')) return 'Empleadores';
+    if (titulo.includes('escaleras')) return 'Escaleras';
+    if (titulo.includes('estructuras') || titulo.includes('encofrados')) return 'Estructuras y Encofrados';
+    if (titulo.includes('supervisores')) return 'Supervisores';
+    if (titulo.includes('andamios')) return 'Andamios';
+    return document.title;
+  }
+
+  async function guardarResultadoSupabase() {
+    const nombre = document.getElementById('nombreUsuario').value.trim();
+    if (!nombre) {
+      alert('⚠️ Por favor ingresa tu nombre para guardar el resultado');
+      return;
+    }
+
+    const btnGuardar = event.target;
+    const textoOriginal = btnGuardar.textContent;
+    btnGuardar.textContent = '⏳ Guardando...';
+    btnGuardar.disabled = true;
+
+    const modulo = obtenerNombreModulo();
+    const correcto = parseInt(document.getElementById('mCorrect').textContent, 10);
+    const incorrecto = parseInt(document.getElementById('mWrong').textContent, 10);
+    const saltado = parseInt(document.getElementById('mSkipped').textContent, 10);
+    const porcentaje = parseInt(document.getElementById('mPercent').textContent, 10);
+    const puntaje = correcto * 100;
+
+    console.log('Guardando:', { nombre, modulo, puntaje, correcto, incorrecto, saltado, porcentaje });
+
+    const { data, error } = await supabase
+      .from('resultados_test')
+      .insert([{
+        nombre: nombre,
+        modulo: modulo,
+        puntaje: puntaje,
+        correcto: correcto,
+        incorrecto: incorrecto,
+        saltado: saltado,
+        porcentaje: porcentaje
+      }]);
+
+    if (error) {
+      console.error('Error:', error);
+      alert('❌ Error al guardar: ' + error.message);
+      btnGuardar.textContent = textoOriginal;
+      btnGuardar.disabled = false;
+    } else {
+      document.getElementById('mensajeGuardado').style.display = 'block';
+      document.getElementById('mensajeGuardado').textContent = '✅ ¡Resultado guardado correctamente! Puedes reiniciar para intentar de nuevo.';
+      document.getElementById('formNombre').style.display = 'none';
+    }
+  }
+
+  function resetearFormularioNombre() {
+    document.getElementById('formNombre').style.display = 'block';
+    document.getElementById('mensajeGuardado').style.display = 'none';
+    document.getElementById('nombreUsuario').value = '';
+  }
+</script>
+</body>
+</html>
